@@ -1,6 +1,9 @@
 module Solitaire.Tableaux
   ( Tableau(..)
   , addCard
+  , takeCard
+  , addStack
+  , takeStack
   , TableauIndex
   , Tableaux
   , get
@@ -33,6 +36,63 @@ addCard card =
         reconstruct newStack = Tableau { stack: newStack, faceDown }
       in
         map reconstruct (Stack.push card stack)
+
+-- | Attempt to take a single card from a tableau. Returns `Nothing` if the
+-- | tableau is an empty space.
+takeCard :: Tableau -> Maybe (Tuple Card Tableau)
+takeCard =
+  case _ of
+    EmptySpace ->
+      Nothing
+    Tableau { stack, faceDown } ->
+      case Stack.pop stack of
+        { card, remaining } ->
+          let
+            fromNewStack s = Tableau { stack: s, faceDown }
+          in
+            Just (Tuple card (maybe (fromCards faceDown) fromNewStack remaining))
+
+-- | Attempt to add another stack to the bottom of a tableau's stack.
+addStack :: Stack -> Tableau -> Maybe Tableau
+addStack newStack =
+  case _ of
+    EmptySpace ->
+      if (Stack.highCard newStack).rank == King
+        then Just (Tableau { stack: newStack, faceDown: Nil })
+        else Nothing
+    Tableau { stack, faceDown } ->
+      let
+        reconstruct combined = Tableau { stack: combined, faceDown }
+      in
+        map reconstruct (Stack.join newStack stack)
+
+-- | Attempt to take a stack of the given size from a tableau. Returns
+-- | `Nothing` if there are not that many cards in the given tableau's stack.
+takeStack :: Int -> Tableau -> Maybe (Tuple Stack Tableau)
+takeStack size =
+  case _ of
+    EmptySpace ->
+      Nothing
+    Tableau { stack, faceDown } ->
+      if size == Stack.size stack
+        then
+          Just (Tuple stack (fromCards faceDown))
+        else
+          let
+            reconstruct { top: t, bottom: b } =
+              Tuple b (Tableau { stack: t, faceDown })
+          in
+            map reconstruct (Stack.split size stack)
+      
+-- | Create a `Tableau` from a list of cards by turning the head card face-up
+-- | and leaving the rest face-down.
+fromCards :: List Card -> Tableau
+fromCards =
+  case _ of
+    c:cs ->
+      Tableau { stack: Stack.singleton c, faceDown: cs }
+    Nil ->
+      EmptySpace
 
 -- | Identifies one of the seven tableaux: an `Int` between 0 and 6
 -- | (inclusive). The index 0 represents the left-most tableau.

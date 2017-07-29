@@ -7,10 +7,13 @@ import Control.MonadZero (guard) as ReExports
 import Control.Monad.Trans.Class (lift) as ReExports
 import Control.Monad.State.Trans (StateT) as ReExports
 import Control.Monad.State.Class (gets, put, modify) as ReExports
+import Control.Monad.Eff.Console (log, logShow) as ReExports
 import Data.Enum (class Enum, class BoundedEnum, Cardinality(..), pred, succ, toEnum, fromEnum, defaultPred, defaultSucc) as ReExports
 import Data.Tuple (Tuple(..)) as ReExports
 import Data.List (List(..), (:)) as ReExports
 import Data.Maybe (Maybe(..), maybe, fromMaybe) as ReExports
 import Data.Map (Map) as ReExports
+import Data.Monoid (class Monoid, mempty, power) as ReExports
+import Data.Foldable (class Foldable, fold, for_, traverse_, intercalate) as ReExports 
 import Data.Profunctor.Strong (first, second) as ReExports
 import Partial.Unsafe (unsafeCrashWith) as ReExports

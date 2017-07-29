@@ -6,9 +6,10 @@ import Solitaire.Card (Card(..), Suit(..), Rank(..), suitColour)
 import Solitaire.Stack (Stack)
 import Solitaire.Stack as Stack
 import Solitaire.Foundations (Foundations)
+import Solitaire.Foundations as Foundations
 import Solitaire.Stock (Stock)
 import Solitaire.Stock as Stock
-import Solitaire.Tableaux (Tableaux, Tableau, TableauIndex)
+import Solitaire.Tableaux (Tableaux, Tableau(..), TableauIndex)
 import Solitaire.Tableaux as Tableaux
 
 type Game
@@ -29,8 +30,8 @@ data CardCursor
   | FromTableau TableauIndex
 
 -- | A cursor which points to a stack in an in-progress game.
-data StackCursor
-  = StackCursor { tableau :: TableauIndex, size :: Int }
+type StackCursor
+  = { ix :: TableauIndex, size :: Int }
 
 data Move
   = ResetStock
@@ -63,6 +64,32 @@ withTableau ix f = do
   modify (_ { tableaux = newTableaux })
   pure x
 
+takeFromWaste :: GameM Card
+takeFromWaste =
+  withStock \s ->
+    map (\{ card, stock } -> Tuple card stock) (Stock.take s)
+
+takeFromTableau :: TableauIndex -> GameM Card
+takeFromTableau ix =
+  withTableau ix (Tableaux.takeCard)
+
+addToFoundations :: Card -> GameM Unit
+addToFoundations card = do
+  foundations <- gets _.foundations
+  newFoundations <- lift $ Foundations.addCard card foundations
+  modify (_ { foundations = newFoundations })
+  pure unit
+
+getCard :: CardCursor -> GameM Card
+getCard =
+  case _ of
+    FromWaste -> takeFromWaste
+    FromTableau ix -> takeFromTableau ix
+
+getStack :: StackCursor -> GameM Stack
+getStack { ix, size } = do
+  withTableau ix (Tableaux.takeStack size)
+
 resetStock :: GameM Unit
 resetStock =
   withStock (map (Tuple unit) <<< Stock.reset)
@@ -71,11 +98,6 @@ advanceStock :: GameM Unit
 advanceStock =
   withStock (map (Tuple unit) <<< Stock.advance)
 
-takeFromWaste :: GameM Card
-takeFromWaste =
-  withStock \s ->
-    map (\{ card, stock } -> Tuple card stock) (Stock.take s)
-
 wasteToTableau :: TableauIndex -> GameM Unit
 wasteToTableau ix = do
   card <- takeFromWaste
@@ -83,8 +105,10 @@ wasteToTableau ix = do
 
 moveToFoundations :: CardCursor -> GameM Unit
 moveToFoundations csr = do
-  pure unit
+  card <- getCard csr
+  addToFoundations card
 
 moveStack :: StackCursor -> TableauIndex -> GameM Unit
 moveStack csr ix = do
-  pure unit
+  stack <- getStack csr
+  withTableau ix (map (Tuple unit) <<< Tableaux.addStack stack)

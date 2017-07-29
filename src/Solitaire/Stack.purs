@@ -1,6 +1,7 @@
 module Solitaire.Stack
   ( Stack
   , singleton
+  , size
   , split
   , pop
   , push
@@ -26,6 +27,9 @@ singleton c = Stack (c : Nil)
 -- | Unwrap a `Stack` to access the underlying `List`.
 runStack :: Stack -> List Card
 runStack (Stack cs) = cs
+
+size :: Stack -> Int
+size = List.length <<< runStack
 
 -- | Attempt to split a `Stack`. The `Int` argument specifies the number of
 -- | cards which should be in the bottom stack after splitting.
