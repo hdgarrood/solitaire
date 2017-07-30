@@ -7,7 +7,6 @@ data Card
 
 derive instance eqCard :: Eq Card
 derive instance ordCard :: Ord Card
-derive instance genericCard :: Generic Card _
 
 instance showCard :: Show Card where
   show = displayCard
@@ -32,7 +31,6 @@ data Suit
 
 derive instance eqSuit :: Eq Suit
 derive instance ordSuit :: Ord Suit
-derive instance genericSuit :: Generic Suit _
 
 displaySuit :: Suit -> String
 displaySuit =

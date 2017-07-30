@@ -3,7 +3,6 @@ module Solitaire.Repl where
 import Solitaire.Prelude
 import Data.String as String
 import Data.Int as Int
-import Data.Foreign.Generic (genericEncodeJSON, genericDecodeJSON, defaultOptions)
 import Node.ReadLine (READLINE)
 import Node.ReadLine as RL
 import Node.FS (FS)

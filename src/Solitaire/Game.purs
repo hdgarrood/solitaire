@@ -23,7 +23,6 @@ newtype Game = Game
   }
 
 derive instance newtypeGame :: Newtype Game _
-derive instance genericGame :: Generic Game _
 
 -- | A `GameM` action is one which can modify the state of a `Game`, and which
 -- | can fail (if an illegal move is attempted).
@@ -38,10 +37,6 @@ data CardCursor
 
 derive instance eqCardCursor :: Eq CardCursor
 derive instance ordCardCursor :: Ord CardCursor
-derive instance genericCardCursor :: Generic CardCursor _
-
-instance showCardCursor :: Show CardCursor where
-  show = genericShow
 
 -- | A cursor which points to a stack in an in-progress game.
 type StackCursor
@@ -56,10 +51,6 @@ data Move
 
 derive instance eqMove :: Eq Move
 derive instance ordMove :: Ord Move
-derive instance genericMove :: Generic Move _
-
-instance showMove :: Show Move where
-  show = genericShow
 
 applyMove :: Move -> GameM Unit
 applyMove =

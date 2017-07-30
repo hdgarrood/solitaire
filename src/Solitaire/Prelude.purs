@@ -23,10 +23,6 @@ import Data.Monoid (class Monoid, mempty, power) as ReExports
 import Data.Foldable (class Foldable, foldr, foldl, fold, foldMap, for_, traverse_, intercalate, maximum, maximumBy) as ReExports
 import Data.Function (on) as ReExports
 import Data.Profunctor.Strong (first, second) as ReExports
-import Data.Generic.Rep (class Generic) as ReExports
-import Data.Generic.Rep.Show (genericShow) as ReExports
-import Data.Foreign.Generic (genericEncode, genericEncodeJSON, genericDecode, genericDecodeJSON, defaultOptions) as ReExports
-import Data.Foreign.Class (class Encode, class Decode) as ReExports
 import Data.Newtype (class Newtype, wrap, unwrap, over) as ReExports
 import Partial.Unsafe (unsafeCrashWith, unsafePartial) as ReExports
 
