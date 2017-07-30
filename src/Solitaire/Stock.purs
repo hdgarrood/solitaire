@@ -1,6 +1,7 @@
 module Solitaire.Stock
   ( Stock
-  , initialStock
+  , initial
+  , run
   , head
   , take
   , anyFaceDown
@@ -18,8 +19,11 @@ data Stock
   -- Fields: face-up cards (waste), face-down cards (stock).
   = Stock (List Card) (List Card)
 
-initialStock :: List Card -> Stock
-initialStock stock = Stock Nil stock
+initial :: List Card -> Stock
+initial stock = Stock Nil stock
+
+run :: Stock -> { waste :: List Card, stock :: List Card }
+run (Stock waste stock) = { waste, stock }
 
 -- | Returns the visible card at the top of the face-up pile (waste), if any.
 head :: Stock -> Maybe Card

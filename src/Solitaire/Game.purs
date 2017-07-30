@@ -36,7 +36,7 @@ type StackCursor
 data Move
   = ResetStock
   | AdvanceStock
-  | WasteToTableau TableauIndex 
+  | WasteToTableau TableauIndex
   | MoveToFoundations CardCursor
   | MoveStack StackCursor TableauIndex
 
@@ -93,7 +93,7 @@ getStack { ix, size } = do
 resetStock :: GameM Unit
 resetStock =
   withStock (map (Tuple unit) <<< Stock.reset)
- 
+
 advanceStock :: GameM Unit
 advanceStock =
   withStock (map (Tuple unit) <<< Stock.advance)
@@ -112,3 +112,7 @@ moveStack :: StackCursor -> TableauIndex -> GameM Unit
 moveStack csr ix = do
   stack <- getStack csr
   withTableau ix (map (Tuple unit) <<< Tableaux.addStack stack)
+
+-- exampleGame :: Game
+-- exampleGame =
+--   { stock:

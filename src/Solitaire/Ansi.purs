@@ -1,6 +1,7 @@
 module Solitaire.Ansi where
 
 import Solitaire.Prelude
+import Data.Array as Array
 import Data.String as String
 import Ansi.Codes as Ansi
 import Ansi.Output (withGraphics, foreground, background, bold)
@@ -16,13 +17,33 @@ import Solitaire.Tableaux (Tableaux, Tableau(..), TableauIndex)
 import Solitaire.Tableaux as Tableaux
 import Solitaire.Game (Game)
 
-displayGame :: Game -> String
-displayGame game =
-  let
-    columns = map (maybe emptySpace singleCard)
-                  (Foundations.toArray game.foundations)
-  in
-    String.joinWith "\n" (map (intercalate " ") columns)
+transpose :: forall a. Array (Array a) -> Array (Array a)
+transpose xs =
+  flip Array.mapWithIndex xs \i _ ->
+    map (\row -> unsafePartial (Array.unsafeIndex row i)) xs
+
+foundations :: Foundations -> Array (Array String)
+foundations =
+  map (maybe emptySpace singleCard) <<< Foundations.toArray
+
+stock :: Stock -> Array (Array String)
+stock s =
+  [ maybe emptySpace singleCard (Stock.head s)
+  , if Stock.anyFaceDown s then fullFaceDown else emptySpace
+  ]
+
+topHalf :: Game -> String
+topHalf game =
+  displayColumns $
+    foundations game.foundations <>
+    [ emptySpace ] <>
+    stock game.stock
+
+displayColumns :: Array (Array String) -> String
+displayColumns =
+  String.joinWith "\n" <<<
+  map (intercalate " ") <<<
+  transpose
 
 topLeft :: String
 topLeft = "┌"
@@ -56,6 +77,10 @@ emptySpace =
   , bottomLeft <> power horizontalDotted cardWidth <> bottomRight
   ]
 
+justSpaces :: Array String
+justSpaces =
+  Array.replicate cardHeight (power " " (cardWidth + 2))
+
 singleCard :: Card -> Array String
 singleCard c =
   halfCard c <> bottomHalfCard
@@ -72,6 +97,13 @@ halfFaceDown =
   , vertical <> power "*" cardWidth <> vertical
   ]
 
+fullFaceDown :: Array String
+fullFaceDown =
+  halfFaceDown <>
+  [ vertical <> power "*" cardWidth <> vertical
+  , bottomLeft <> power horizontal cardWidth <> bottomRight
+  ]
+
 bottomHalfCard :: Array String
 bottomHalfCard =
   [ vertical <> withGraphics (background Ansi.White) (power " " cardWidth) <> vertical
@@ -80,6 +112,9 @@ bottomHalfCard =
 
 cardWidth :: Int
 cardWidth = 4
+
+cardHeight :: Int
+cardHeight = 4
 
 graphicsForSuit :: Suit -> Array Ansi.GraphicsParam
 graphicsForSuit suit =
@@ -99,5 +134,5 @@ rpad min str =
     diff = min - String.length str
   in
     if diff > 0
-      then str <> power " " diff 
+      then str <> power " " diff
       else str

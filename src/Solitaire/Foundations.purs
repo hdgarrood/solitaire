@@ -1,6 +1,6 @@
 module Solitaire.Foundations
   ( Foundations
-  , initialFoundations
+  , initial
   , lookupSuit
   , addCard
   , toArray
@@ -14,8 +14,8 @@ import Solitaire.Card (Card, Suit(..), Rank)
 data Foundations
   = Foundations (Map Suit Rank)
 
-initialFoundations :: Foundations
-initialFoundations = Foundations (Map.fromFoldable [])
+initial :: Foundations
+initial = Foundations (Map.fromFoldable [])
 
 -- | Lookup the highest card in the foundation pile for a given suit; returns
 -- | `Nothing` if there are no cards in the pile for the given suit.
