@@ -6,6 +6,7 @@ module Solitaire.Tableaux
   , takeStack
   , TableauIndex
   , Tableaux
+  , initial
   , get
   , put
   , modify
@@ -13,6 +14,7 @@ module Solitaire.Tableaux
 
 import Solitaire.Prelude hiding (put, modify)
 import Data.Map as Map
+import Data.Array as Array
 
 import Solitaire.Stack (Stack)
 import Solitaire.Stack as Stack
@@ -125,11 +127,31 @@ instance boundedEnumTableauIndex :: BoundedEnum TableauIndex where
 newtype Tableaux =
   Tableaux (Map TableauIndex { stack :: Stack, faceDown :: List Card })
 
-runTableaux :: Tableaux -> Map TableauIndex { stack :: Stack, faceDown :: List Card }
-runTableaux (Tableaux m) = m
+run :: Tableaux -> Map TableauIndex { stack :: Stack, faceDown :: List Card }
+run (Tableaux m) = m
+
+empty :: Tableaux
+empty = Tableaux Map.empty
+
+-- | Create an initial set of tableaux.
+initial :: Array Card -> { tableaux :: Tableaux, leftover :: Array Card }
+initial cards =
+  let
+    sliceFor ix = Tuple (triangle ix) (triangle (ix + 1))
+    tableaux = foldr go empty (Array.range 0 6)
+    go ix =
+      case sliceFor ix of
+        Tuple from to ->
+          let
+            cs = Array.toUnfoldable (Array.slice from to cards)
+          in
+            put (TableauIndex ix) (fromCards cs)
+    leftover = Array.drop (triangle 7) cards
+  in
+    { tableaux, leftover }
 
 get :: TableauIndex -> Tableaux -> Tableau
-get ix = maybe EmptySpace Tableau <<< Map.lookup ix <<< runTableaux
+get ix = maybe EmptySpace Tableau <<< Map.lookup ix <<< run
 
 put :: TableauIndex -> Tableau -> Tableaux -> Tableaux
 put ix tableau (Tableaux m) =

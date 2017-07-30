@@ -44,8 +44,8 @@ take =
 anyFaceDown :: Stock -> Boolean
 anyFaceDown =
   case _ of
-    Stock _ Nil -> true
-    _ -> false
+    Stock _ Nil -> false
+    _ -> true
 
 -- | If there are no more cards in the stock pile, this resets the `Stock` by
 -- | moving all the cards from the waste pile back to the stock pile.

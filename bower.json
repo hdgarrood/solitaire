@@ -14,7 +14,8 @@
     "purescript-transformers": "^3.4.0",
     "purescript-profunctor": "^3.2.0",
     "purescript-ansi": "^4.0.0",
-    "purescript-quickcheck": "^4.4.0"
+    "purescript-quickcheck": "^4.4.0",
+    "purescript-generics-rep": "^5.1.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"

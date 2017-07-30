@@ -2,6 +2,7 @@ module Solitaire.Ansi where
 
 import Solitaire.Prelude
 import Data.Array as Array
+import Data.List as List
 import Data.String as String
 import Ansi.Codes as Ansi
 import Ansi.Output (withGraphics, foreground, background, bold)
@@ -18,9 +19,12 @@ import Solitaire.Tableaux as Tableaux
 import Solitaire.Game (Game)
 
 transpose :: forall a. Array (Array a) -> Array (Array a)
-transpose xs =
-  flip Array.mapWithIndex xs \i _ ->
-    map (\row -> unsafePartial (Array.unsafeIndex row i)) xs
+transpose =
+  Array.toUnfoldable
+  >>> map Array.toUnfoldable
+  >>> List.transpose
+  >>> map Array.fromFoldable
+  >>> Array.fromFoldable
 
 foundations :: Foundations -> Array (Array String)
 foundations =
@@ -36,7 +40,7 @@ topHalf :: Game -> String
 topHalf game =
   displayColumns $
     foundations game.foundations <>
-    [ emptySpace ] <>
+    [ justSpaces ] <>
     stock game.stock
 
 displayColumns :: Array (Array String) -> String

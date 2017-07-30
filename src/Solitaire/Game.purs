@@ -2,6 +2,8 @@ module Solitaire.Game where
 
 import Solitaire.Prelude
 
+import Data.Array as Array
+
 import Solitaire.Card (Card(..), Suit(..), Rank(..), suitColour)
 import Solitaire.Stack (Stack)
 import Solitaire.Stack as Stack
@@ -11,6 +13,8 @@ import Solitaire.Stock (Stock)
 import Solitaire.Stock as Stock
 import Solitaire.Tableaux (Tableaux, Tableau(..), TableauIndex)
 import Solitaire.Tableaux as Tableaux
+import Solitaire.Deck (Deck)
+import Solitaire.Deck as Deck
 
 type Game
   = { stock :: Stock
@@ -113,6 +117,11 @@ moveStack csr ix = do
   stack <- getStack csr
   withTableau ix (map (Tuple unit) <<< Tableaux.addStack stack)
 
--- exampleGame :: Game
--- exampleGame =
---   { stock:
+initialGame :: Deck -> Game
+initialGame deck =
+  case Tableaux.initial (Deck.run deck) of
+    { tableaux, leftover } ->
+      { stock: Stock.initial (Array.toUnfoldable leftover)
+      , foundations: Foundations.initial
+      , tableaux
+      }
