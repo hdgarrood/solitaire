@@ -43,6 +43,47 @@ topHalf game =
     [ justSpaces ] <>
     stock game.stock
 
+stack :: Stack -> Array String
+stack s =
+  let
+    cards = Array.reverse (Array.fromFoldable (Stack.run s))
+  in
+    Array.concatMap halfCard cards <> bottomHalfCard
+
+tableau :: Tableau -> Array String
+tableau t =
+  let
+    tableauHeight = (6+13)*2+2 -- 6 face down + 13 face up, each occupying 2 rows,
+                               -- plus two extra rows for the last card
+  in
+    extend tableauHeight (power " " (cardHeight + 2)) $
+      case t of
+        EmptySpace -> []
+        Tableau { stack: s, faceDown } ->
+          power halfFaceDown (List.length faceDown) <>
+          stack s
+
+bottomHalf :: Game -> String
+bottomHalf game =
+  displayColumns $
+    map (\ix -> tableau (Tableaux.get ix game.tableaux))
+        (enumFromTo bottom top)
+
+game :: Game -> String
+game g = topHalf g <> "\n" <> bottomHalf g
+
+-- | Extend an array with copies of a given element to ensure that it reaches
+-- | a certain length.
+extend :: forall a. Int -> a -> Array a -> Array a
+extend minLen extra arr =
+  let
+    actualLen = Array.length arr
+    diff = minLen - actualLen
+  in
+    if diff > 0
+      then arr <> Array.replicate diff extra
+      else arr
+
 displayColumns :: Array (Array String) -> String
 displayColumns =
   String.joinWith "\n" <<<
@@ -84,6 +125,10 @@ emptySpace =
 justSpaces :: Array String
 justSpaces =
   Array.replicate cardHeight (power " " (cardWidth + 2))
+
+halfJustSpaces :: Array String
+halfJustSpaces =
+  Array.replicate (cardHeight / 2) (power " " (cardWidth + 2))
 
 singleCard :: Card -> Array String
 singleCard c =

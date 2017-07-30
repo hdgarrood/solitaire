@@ -1,5 +1,6 @@
 module Solitaire.Stack
   ( Stack
+  , run
   , singleton
   , size
   , split
@@ -25,11 +26,11 @@ singleton :: Card -> Stack
 singleton c = Stack (c : Nil)
 
 -- | Unwrap a `Stack` to access the underlying `List`.
-runStack :: Stack -> List Card
-runStack (Stack cs) = cs
+run :: Stack -> List Card
+run (Stack cs) = cs
 
 size :: Stack -> Int
-size = List.length <<< runStack
+size = List.length <<< run
 
 -- | Attempt to split a `Stack`. The `Int` argument specifies the number of
 -- | cards which should be in the bottom stack after splitting.
@@ -65,7 +66,7 @@ pop =
 push :: Card -> Stack -> Maybe Stack
 push c stack =
   if c `canPlaceOn` highCard stack
-    then Just (Stack (c : runStack stack))
+    then Just (Stack (c : run stack))
     else Nothing
 
 -- | Get the highest card in the `Stack`.
