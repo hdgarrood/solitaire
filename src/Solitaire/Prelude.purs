@@ -26,6 +26,8 @@ import Data.Profunctor.Strong (first, second) as ReExports
 import Data.Newtype (class Newtype, wrap, unwrap, over) as ReExports
 import Data.Generic.Rep (class Generic) as ReExports
 import Data.Argonaut (class DecodeJson, decodeJson, class EncodeJson, encodeJson) as ReExports
+import Data.Argonaut.Core (stringify) as ReExports
+import Data.Argonaut.Parser (jsonParser) as ReExports
 import Data.Argonaut.Decode.Generic.Rep (genericDecodeJson) as ReExports
 import Data.Argonaut.Encode.Generic.Rep (genericEncodeJson) as ReExports
 import Partial.Unsafe (unsafeCrashWith, unsafePartial) as ReExports

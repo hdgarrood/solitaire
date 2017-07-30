@@ -109,6 +109,4 @@ main = do
         move ref m
       DumpToFile file -> do
         g <- readRef ref
-        pure unit
-        -- TODO
-        -- FS.writeTextFile UTF8 file (genericEncodeJSON defaultOptions g)
+        FS.writeTextFile UTF8 file (stringify (encodeJson g))
