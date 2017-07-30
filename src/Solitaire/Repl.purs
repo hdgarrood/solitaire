@@ -97,7 +97,7 @@ main = do
 
   RL.setPrompt "> " 2 i
   RL.setLineHandler i \line -> do
-    maybe (log "Unable to parse move") (handleCommand ref) (parseCommand line)
+    maybe (log "Unable to parse move") (handleCommand ref) (parseCommand (String.trim line))
     RL.prompt i
 
   RL.prompt i
