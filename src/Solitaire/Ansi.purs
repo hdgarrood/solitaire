@@ -7,14 +7,14 @@ import Data.String as String
 import Ansi.Codes as Ansi
 import Ansi.Output (withGraphics, foreground, background, bold)
 
-import Solitaire.Card (Card(..), Suit(..), Rank(..), Colour(..), displayCard, suitColour, cardSuit)
+import Solitaire.Card (Card, Suit, Colour(..), displayCard, suitColour, cardSuit)
 import Solitaire.Stack (Stack)
 import Solitaire.Stack as Stack
 import Solitaire.Foundations (Foundations)
 import Solitaire.Foundations as Foundations
 import Solitaire.Stock (Stock)
 import Solitaire.Stock as Stock
-import Solitaire.Tableaux (Tableaux, Tableau(..), TableauIndex)
+import Solitaire.Tableaux (Tableau(..))
 import Solitaire.Tableaux as Tableaux
 import Solitaire.Game (Game)
 
@@ -61,18 +61,18 @@ tableau =
       stack s
 
 game :: Game -> String
-game g = topHalf g <> "\n" <> bottomHalf g
+game g = topHalf <> "\n" <> bottomHalf
   where
-  topHalf game =
+  topHalf =
     displayColumns $
-      foundations (unwrap game).foundations <>
+      foundations (unwrap g).foundations <>
       [ justSpaces ] <>
-      stock (unwrap game).stock
+      stock (unwrap g).stock
 
-  bottomHalf game =
+  bottomHalf =
     let
       cols =
-        map (\ix -> tableau (Tableaux.get ix (unwrap game).tableaux))
+        map (\ix -> tableau (Tableaux.get ix (unwrap g).tableaux))
             (enumFromTo bottom top)
       longest =
         fromMaybe 0 (maximum (map (Array.length <<< unwrap) cols))

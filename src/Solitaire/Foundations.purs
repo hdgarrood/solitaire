@@ -4,11 +4,12 @@ module Solitaire.Foundations
   , lookupSuit
   , addCard
   , toArray
+  , isComplete
   ) where
 
 import Solitaire.Prelude
 import Data.Map as Map
-import Solitaire.Card (Card(..), Suit(..), Rank)
+import Solitaire.Card (Card(..), Suit, allSuits, Rank(King))
 
 -- | This data type encapsulates the four foundation piles in a solitaire game.
 newtype Foundations
@@ -40,4 +41,8 @@ toArray fdn =
     go suit =
       map (Card suit) (lookupSuit suit fdn)
   in
-    map go [Clubs, Diamonds, Hearts, Spades]
+    map go allSuits
+
+isComplete :: Foundations -> Boolean
+isComplete fdn =
+  all (\s -> lookupSuit s fdn == Just King) allSuits

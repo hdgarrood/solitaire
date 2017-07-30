@@ -4,14 +4,13 @@ import Solitaire.Prelude
 
 import Data.Array as Array
 
-import Solitaire.Card (Card(..), Suit(..), Rank(..), suitColour)
+import Solitaire.Card (Card)
 import Solitaire.Stack (Stack)
-import Solitaire.Stack as Stack
 import Solitaire.Foundations (Foundations)
 import Solitaire.Foundations as Foundations
 import Solitaire.Stock (Stock)
 import Solitaire.Stock as Stock
-import Solitaire.Tableaux (Tableaux, Tableau(..), TableauIndex)
+import Solitaire.Tableaux (Tableaux, Tableau, TableauIndex)
 import Solitaire.Tableaux as Tableaux
 import Solitaire.Deck (Deck)
 import Solitaire.Deck as Deck

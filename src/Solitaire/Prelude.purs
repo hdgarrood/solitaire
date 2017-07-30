@@ -20,7 +20,7 @@ import Data.List (List(..), (:)) as ReExports
 import Data.Maybe (Maybe(..), maybe, fromMaybe, fromJust) as ReExports
 import Data.Map (Map) as ReExports
 import Data.Monoid (class Monoid, mempty, power) as ReExports
-import Data.Foldable (class Foldable, foldr, foldl, fold, foldMap, for_, traverse_, intercalate, maximum, maximumBy) as ReExports
+import Data.Foldable (class Foldable, foldr, foldl, fold, foldMap, for_, traverse_, intercalate, maximum, maximumBy, all) as ReExports
 import Data.Function (on) as ReExports
 import Data.Profunctor.Strong (first, second) as ReExports
 import Data.Newtype (class Newtype, wrap, unwrap, over) as ReExports
@@ -48,6 +48,6 @@ fact n =
     else
       let
         go acc 1 = acc
-        go acc n = go (acc * n) (n - 1)
+        go acc m = go (acc * m) (m - 1)
       in
         go 1 n

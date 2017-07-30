@@ -28,8 +28,8 @@ move gameRef m = do
       writeRef gameRef g'
       log $ Ansi.game g'
 
-ix :: Int -> TableauIndex
-ix i =
+ixFromInt :: Int -> TableauIndex
+ixFromInt i =
   case toEnum i of
     Just r -> r
     Nothing
@@ -67,7 +67,7 @@ parseMove =
   where
   parseTableauIndex :: String -> Maybe TableauIndex
   parseTableauIndex =
-    map ix <<< Int.fromString
+    map ixFromInt <<< Int.fromString
 
   parseCardCursor :: String -> Maybe CardCursor
   parseCardCursor =

@@ -83,6 +83,9 @@ instance boundedEnumSuit :: BoundedEnum Suit where
       3 -> Just Spades
       _ -> Nothing
 
+allSuits :: Array Suit
+allSuits = enumFromTo bottom top
+
 data Colour
   = Red
   | Black
@@ -167,6 +170,9 @@ instance boundedEnumRank :: BoundedEnum Rank where
       11 -> Just Queen
       12 -> Just King
       _ -> Nothing
+
+allRanks :: Array Rank
+allRanks = enumFromTo bottom top
 
 displayRank :: Rank -> String
 displayRank =
