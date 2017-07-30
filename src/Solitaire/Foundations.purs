@@ -8,10 +8,10 @@ module Solitaire.Foundations
 
 import Solitaire.Prelude
 import Data.Map as Map
-import Solitaire.Card (Card, Suit(..), Rank)
+import Solitaire.Card (Card(..), Suit(..), Rank)
 
 -- | This data type encapsulates the four foundation piles in a solitaire game.
-data Foundations
+newtype Foundations
   = Foundations (Map Suit Rank)
 
 initial :: Foundations
@@ -26,7 +26,7 @@ lookupSuit suit (Foundations m) =
 -- | Attempt to add a `Card` to a `Foundations`. Returns `Nothing` if the card
 -- | could not be added.
 addCard :: Card -> Foundations -> Maybe Foundations
-addCard {suit, rank} f@(Foundations m) =
+addCard (Card suit rank) f@(Foundations m) =
   if pred rank == lookupSuit suit f
     then Just (Foundations (Map.insert suit rank m))
     else Nothing
@@ -35,6 +35,6 @@ toArray :: Foundations -> Array (Maybe Card)
 toArray fdn =
   let
     go suit =
-      map (\rank -> { suit, rank }) (lookupSuit suit fdn)
+      map (Card suit) (lookupSuit suit fdn)
   in
     map go [Clubs, Diamonds, Hearts, Spades]

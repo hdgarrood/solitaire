@@ -18,7 +18,7 @@ import Data.Array as Array
 
 import Solitaire.Stack (Stack)
 import Solitaire.Stack as Stack
-import Solitaire.Card (Card, Rank(..))
+import Solitaire.Card (Card, Rank(..), cardRank)
 
 -- | One of the seven central piles (tableaux) in a solitaire game.
 data Tableau
@@ -30,7 +30,7 @@ addCard :: Card -> Tableau -> Maybe Tableau
 addCard card =
   case _ of
     EmptySpace ->
-      if (card.rank == King)
+      if (cardRank card == King)
         then Just (Tableau { stack: Stack.singleton card, faceDown: Nil })
         else Nothing
     Tableau { stack, faceDown } ->
@@ -59,7 +59,7 @@ addStack :: Stack -> Tableau -> Maybe Tableau
 addStack newStack =
   case _ of
     EmptySpace ->
-      if (Stack.highCard newStack).rank == King
+      if cardRank (Stack.highCard newStack) == King
         then Just (Tableau { stack: newStack, faceDown: Nil })
         else Nothing
     Tableau { stack, faceDown } ->

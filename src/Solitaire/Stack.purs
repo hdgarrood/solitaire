@@ -9,11 +9,12 @@ module Solitaire.Stack
   , highCard
   , lowCard
   , join
+  , fromCards
   ) where
 
 import Solitaire.Prelude
 import Data.List as List
-import Solitaire.Card (Card, suitColour)
+import Solitaire.Card (Card(..), suitColour)
 
 -- | A `Stack` is a nonempty stack of cards of alternating suit colour and
 -- | descending rank, usually fanned on the table. A stack is represented as
@@ -65,7 +66,7 @@ pop =
 -- | card could not be added (because it was incompatible).
 push :: Card -> Stack -> Maybe Stack
 push c stack =
-  if c `canPlaceOn` highCard stack
+  if c `canPlaceOn` lowCard stack
     then Just (Stack (c : run stack))
     else Nothing
 
@@ -93,6 +94,14 @@ join below above =
   where
   unsafeJoin (Stack xs) (Stack ys) = Stack (xs <> ys)
 
+fromCards :: List Card -> Maybe Stack
+fromCards =
+  case _ of
+    c:cs ->
+      List.foldM (flip push) (singleton c) cs
+    Nil ->
+      Nothing
+
 canPlaceOn :: Card -> Card -> Boolean
-canPlaceOn c1 c2 =
-  suitColour c1.suit /= suitColour c2.suit && succ c1.rank == Just c2.rank
+canPlaceOn (Card suit1 rank1) (Card suit2 rank2) =
+  suitColour suit1 /= suitColour suit2 && succ rank1 == Just rank2

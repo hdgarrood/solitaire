@@ -2,14 +2,25 @@ module Solitaire.Card where
 
 import Solitaire.Prelude
 
-type Card
-  = { suit :: Suit
-    , rank :: Rank
-    }
+data Card
+  = Card Suit Rank
+
+derive instance eqCard :: Eq Card
+derive instance ordCard :: Ord Card
+derive instance genericCard :: Generic Card _
+
+instance showCard :: Show Card where
+  show = displayCard
 
 displayCard :: Card -> String
-displayCard { suit, rank } =
+displayCard (Card suit rank ) =
   displayRank rank <> displaySuit suit
+
+cardRank :: Card -> Rank
+cardRank (Card _ r) = r
+
+cardSuit :: Card -> Suit
+cardSuit (Card s _) = s
 
 -- | A suit. The `Ord` and `Bounded` instances use the bridge ordering: spades
 -- | (highest), then hearts, diamons, and clubs.
@@ -21,6 +32,18 @@ data Suit
 
 derive instance eqSuit :: Eq Suit
 derive instance ordSuit :: Ord Suit
+derive instance genericSuit :: Generic Suit _
+
+displaySuit :: Suit -> String
+displaySuit =
+  case _ of
+    Hearts -> "♥"
+    Diamonds -> "♦"
+    Clubs -> "♣"
+    Spades -> "♠"
+
+instance showSuit :: Show Suit where
+  show = displaySuit
 
 instance boundedSuit :: Bounded Suit where
   top = Spades
@@ -62,17 +85,6 @@ suitColour =
     Diamonds -> Red
     Clubs -> Black
     Spades -> Black
-
-displaySuit :: Suit -> String
-displaySuit =
-  case _ of
-    Hearts -> "♥"
-    Diamonds -> "♦"
-    Clubs -> "♣"
-    Spades -> "♠"
-
-instance showSuit :: Show Suit where
-  show = displaySuit
 
 -- | A card rank. The `Ord` and `Bounded` instances consider `Ace` to be low.
 data Rank

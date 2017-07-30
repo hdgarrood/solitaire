@@ -9,7 +9,7 @@ import Solitaire.Prelude
 import Test.QuickCheck.Gen (evalGen, shuffle)
 import Test.QuickCheck.LCG (mkSeed)
 
-import Solitaire.Card (Card, Suit, Rank)
+import Solitaire.Card (Card(..), Suit, Rank)
 
 -- | A `Deck` contains every card exactly once.
 newtype Deck = Deck (Array Card)
@@ -21,10 +21,10 @@ unshuffled :: Array Card
 unshuffled = do
   suit <- allSuits
   rank <- allRanks
-  pure $ { suit, rank }
+  pure $ Card suit rank
   where
-  allSuits = enumFromTo bottom top :: Array Suit
-  allRanks = enumFromTo bottom top :: Array Rank
+  allSuits = enumFromTo bottom top
+  allRanks = enumFromTo bottom top
 
 fromSeed :: Int -> Deck
 fromSeed s =

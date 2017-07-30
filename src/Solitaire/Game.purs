@@ -16,11 +16,14 @@ import Solitaire.Tableaux as Tableaux
 import Solitaire.Deck (Deck)
 import Solitaire.Deck as Deck
 
-type Game
-  = { stock :: Stock
-    , tableaux :: Tableaux
-    , foundations :: Foundations
-    }
+newtype Game = Game
+  { stock :: Stock
+  , tableaux :: Tableaux
+  , foundations :: Foundations
+  }
+
+derive instance newtypeGame :: Newtype Game _
+derive instance genericGame :: Generic Game _
 
 -- | A `GameM` action is one which can modify the state of a `Game`, and which
 -- | can fail (if an illegal move is attempted).
@@ -33,6 +36,13 @@ data CardCursor
   -- | Points to the card at the bottom of a tableau stack.
   | FromTableau TableauIndex
 
+derive instance eqCardCursor :: Eq CardCursor
+derive instance ordCardCursor :: Ord CardCursor
+derive instance genericCardCursor :: Generic CardCursor _
+
+instance showCardCursor :: Show CardCursor where
+  show = genericShow
+
 -- | A cursor which points to a stack in an in-progress game.
 type StackCursor
   = { ix :: TableauIndex, size :: Int }
@@ -43,6 +53,13 @@ data Move
   | WasteToTableau TableauIndex
   | MoveToFoundations CardCursor
   | MoveStack StackCursor TableauIndex
+
+derive instance eqMove :: Eq Move
+derive instance ordMove :: Ord Move
+derive instance genericMove :: Generic Move _
+
+instance showMove :: Show Move where
+  show = genericShow
 
 applyMove :: Move -> GameM Unit
 applyMove =
@@ -55,17 +72,17 @@ applyMove =
 
 withStock :: forall a. (Stock -> Maybe (Tuple a Stock)) -> GameM a
 withStock f = do
-  stock <- gets _.stock
+  stock <- gets (_.stock <<< unwrap)
   Tuple x newStock <- lift $ f stock
-  modify (_ { stock = newStock })
+  modify (over Game (_ { stock = newStock }))
   pure x
 
 withTableau :: forall a.
   TableauIndex -> (Tableau -> Maybe (Tuple a Tableau)) -> GameM a
 withTableau ix f = do
-  tableaux <- gets _.tableaux
+  tableaux <- gets (_.tableaux <<< unwrap)
   Tuple x newTableaux <- lift $ Tableaux.modify ix f tableaux
-  modify (_ { tableaux = newTableaux })
+  modify (over Game (_ { tableaux = newTableaux }))
   pure x
 
 takeFromWaste :: GameM Card
@@ -79,9 +96,9 @@ takeFromTableau ix =
 
 addToFoundations :: Card -> GameM Unit
 addToFoundations card = do
-  foundations <- gets _.foundations
+  foundations <- gets (_.foundations <<< unwrap)
   newFoundations <- lift $ Foundations.addCard card foundations
-  modify (_ { foundations = newFoundations })
+  modify (over Game (_ { foundations = newFoundations }))
   pure unit
 
 getCard :: CardCursor -> GameM Card
@@ -121,7 +138,8 @@ initialGame :: Deck -> Game
 initialGame deck =
   case Tableaux.initial (Deck.run deck) of
     { tableaux, leftover } ->
-      { stock: Stock.initial (Array.toUnfoldable leftover)
-      , foundations: Foundations.initial
-      , tableaux
-      }
+      Game
+        { stock: Stock.initial (Array.toUnfoldable leftover)
+        , foundations: Foundations.initial
+        , tableaux
+        }

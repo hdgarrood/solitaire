@@ -7,7 +7,7 @@ import Data.String as String
 import Ansi.Codes as Ansi
 import Ansi.Output (withGraphics, foreground, background, bold)
 
-import Solitaire.Card (Card(..), Suit(..), Rank(..), Colour(..), displayCard, suitColour)
+import Solitaire.Card (Card(..), Suit(..), Rank(..), Colour(..), displayCard, suitColour, cardSuit)
 import Solitaire.Stack (Stack)
 import Solitaire.Stack as Stack
 import Solitaire.Foundations (Foundations)
@@ -18,6 +18,15 @@ import Solitaire.Tableaux (Tableaux, Tableau(..), TableauIndex)
 import Solitaire.Tableaux as Tableaux
 import Solitaire.Game (Game)
 
+newtype Column = Column (Array String)
+
+derive instance newtypeColumn :: Newtype Column _
+derive newtype instance semigroupColumn :: Semigroup Column
+derive newtype instance monoidColumn :: Monoid Column
+
+instance showColumn :: Show Column where
+  show = String.joinWith "\n" <<< unwrap
+
 transpose :: forall a. Array (Array a) -> Array (Array a)
 transpose =
   Array.toUnfoldable
@@ -26,51 +35,50 @@ transpose =
   >>> map Array.fromFoldable
   >>> Array.fromFoldable
 
-foundations :: Foundations -> Array (Array String)
+foundations :: Foundations -> Array Column
 foundations =
   map (maybe emptySpace singleCard) <<< Foundations.toArray
 
-stock :: Stock -> Array (Array String)
+stock :: Stock -> Array Column
 stock s =
   [ maybe emptySpace singleCard (Stock.head s)
   , if Stock.anyFaceDown s then fullFaceDown else emptySpace
   ]
 
-topHalf :: Game -> String
-topHalf game =
-  displayColumns $
-    foundations game.foundations <>
-    [ justSpaces ] <>
-    stock game.stock
-
-stack :: Stack -> Array String
+stack :: Stack -> Column
 stack s =
   let
     cards = Array.reverse (Array.fromFoldable (Stack.run s))
   in
-    Array.concatMap halfCard cards <> bottomHalfCard
+    foldMap halfCard cards <> bottomHalfCard
 
-tableau :: Tableau -> Array String
-tableau t =
-  let
-    tableauHeight = (6+13)*2+2 -- 6 face down + 13 face up, each occupying 2 rows,
-                               -- plus two extra rows for the last card
-  in
-    extend tableauHeight (power " " (cardHeight + 2)) $
-      case t of
-        EmptySpace -> []
-        Tableau { stack: s, faceDown } ->
-          power halfFaceDown (List.length faceDown) <>
-          stack s
-
-bottomHalf :: Game -> String
-bottomHalf game =
-  displayColumns $
-    map (\ix -> tableau (Tableaux.get ix game.tableaux))
-        (enumFromTo bottom top)
+tableau :: Tableau -> Column
+tableau =
+  case _ of
+    EmptySpace -> Column []
+    Tableau { stack: s, faceDown } ->
+      power halfFaceDown (List.length faceDown) <>
+      stack s
 
 game :: Game -> String
 game g = topHalf g <> "\n" <> bottomHalf g
+  where
+  topHalf game =
+    displayColumns $
+      foundations (unwrap game).foundations <>
+      [ justSpaces ] <>
+      stock (unwrap game).stock
+
+  bottomHalf game =
+    let
+      cols =
+        map (\ix -> tableau (Tableaux.get ix (unwrap game).tableaux))
+            (enumFromTo bottom top)
+      longest =
+        fromMaybe 0 (maximum (map (Array.length <<< unwrap) cols))
+    in
+      displayColumns $
+        map (over Column (extend longest (power " " (cardWidth + 2)))) cols
 
 -- | Extend an array with copies of a given element to ensure that it reaches
 -- | a certain length.
@@ -84,11 +92,12 @@ extend minLen extra arr =
       then arr <> Array.replicate diff extra
       else arr
 
-displayColumns :: Array (Array String) -> String
+displayColumns :: Array Column -> String
 displayColumns =
   String.joinWith "\n" <<<
   map (intercalate " ") <<<
-  transpose
+  transpose <<<
+  map unwrap
 
 topLeft :: String
 topLeft = "┌"
@@ -114,50 +123,57 @@ horizontalDotted = "┄"
 verticalDotted :: String
 verticalDotted = "┆"
 
-emptySpace :: Array String
+emptySpace :: Column
 emptySpace =
-  [ topLeft <> power horizontalDotted cardWidth <> topRight
-  , verticalDotted <> power " " cardWidth <> verticalDotted
-  , verticalDotted <> power " " cardWidth <> verticalDotted
-  , bottomLeft <> power horizontalDotted cardWidth <> bottomRight
-  ]
+  Column $
+    [ topLeft <> power horizontalDotted cardWidth <> topRight
+    , verticalDotted <> power " " cardWidth <> verticalDotted
+    , verticalDotted <> power " " cardWidth <> verticalDotted
+    , bottomLeft <> power horizontalDotted cardWidth <> bottomRight
+    ]
 
-justSpaces :: Array String
+justSpaces :: Column
 justSpaces =
-  Array.replicate cardHeight (power " " (cardWidth + 2))
+  Column $
+    Array.replicate cardHeight (power " " (cardWidth + 2))
 
-halfJustSpaces :: Array String
+halfJustSpaces :: Column
 halfJustSpaces =
-  Array.replicate (cardHeight / 2) (power " " (cardWidth + 2))
+  Column $
+    Array.replicate (cardHeight / 2) (power " " (cardWidth + 2))
 
-singleCard :: Card -> Array String
+singleCard :: Card -> Column
 singleCard c =
   halfCard c <> bottomHalfCard
 
-halfCard :: Card -> Array String
+halfCard :: Card -> Column
 halfCard c =
-  [ topLeft <> power horizontal cardWidth <> topRight
-  , vertical <> withGraphics (graphicsForSuit c.suit) (rpad cardWidth (displayCard c)) <> vertical
-  ]
+  Column $
+    [ topLeft <> power horizontal cardWidth <> topRight
+    , vertical <> withGraphics (graphicsForSuit (cardSuit c)) (rpad cardWidth (displayCard c)) <> vertical
+    ]
 
-halfFaceDown :: Array String
+halfFaceDown :: Column
 halfFaceDown =
-  [ topLeft <> power horizontal cardWidth <> topRight
-  , vertical <> power "*" cardWidth <> vertical
-  ]
+  Column $
+    [ topLeft <> power horizontal cardWidth <> topRight
+    , vertical <> power "*" cardWidth <> vertical
+    ]
 
-fullFaceDown :: Array String
+fullFaceDown :: Column
 fullFaceDown =
   halfFaceDown <>
-  [ vertical <> power "*" cardWidth <> vertical
-  , bottomLeft <> power horizontal cardWidth <> bottomRight
-  ]
+  Column
+    [ vertical <> power "*" cardWidth <> vertical
+    , bottomLeft <> power horizontal cardWidth <> bottomRight
+    ]
 
-bottomHalfCard :: Array String
+bottomHalfCard :: Column
 bottomHalfCard =
-  [ vertical <> withGraphics (background Ansi.White) (power " " cardWidth) <> vertical
-  , bottomLeft <> power horizontal cardWidth <> bottomRight
-  ]
+  Column
+    [ vertical <> withGraphics (background Ansi.White) (power " " cardWidth) <> vertical
+    , bottomLeft <> power horizontal cardWidth <> bottomRight
+    ]
 
 cardWidth :: Int
 cardWidth = 4
