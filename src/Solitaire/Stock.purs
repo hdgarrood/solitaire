@@ -19,6 +19,14 @@ data Stock
   -- Fields: face-up cards (waste), face-down cards (stock).
   = Stock (List Card) (List Card)
 
+derive instance genericStock :: Generic Stock _
+
+instance encodeJsonStock :: EncodeJson Stock where
+  encodeJson = genericEncodeJson
+
+instance decodeJsonStock :: DecodeJson Stock where
+  decodeJson = genericDecodeJson
+
 initial :: List Card -> Stock
 initial stock = Stock Nil stock
 

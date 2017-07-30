@@ -7,6 +7,13 @@ data Card
 
 derive instance eqCard :: Eq Card
 derive instance ordCard :: Ord Card
+derive instance genericCard :: Generic Card _
+
+instance encodeJsonCard :: EncodeJson Card where
+  encodeJson = genericEncodeJson
+
+instance decodeJsonCard :: DecodeJson Card where
+  decodeJson = genericDecodeJson
 
 instance showCard :: Show Card where
   show = displayCard
@@ -31,6 +38,13 @@ data Suit
 
 derive instance eqSuit :: Eq Suit
 derive instance ordSuit :: Ord Suit
+derive instance genericSuit :: Generic Suit _
+
+instance encodeJsonSuit :: EncodeJson Suit where
+  encodeJson = genericEncodeJson
+
+instance decodeJsonSuit :: DecodeJson Suit where
+  decodeJson = genericDecodeJson
 
 displaySuit :: Suit -> String
 displaySuit =
@@ -102,6 +116,13 @@ data Rank
 
 derive instance eqRank :: Eq Rank
 derive instance ordRank :: Ord Rank
+derive instance genericRank :: Generic Rank _
+
+instance encodeJsonRank :: EncodeJson Rank where
+  encodeJson = genericEncodeJson
+
+instance decodeJsonRank :: DecodeJson Rank where
+  decodeJson = genericDecodeJson
 
 instance boundedRank :: Bounded Rank where
   top = King

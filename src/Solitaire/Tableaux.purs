@@ -25,6 +25,14 @@ data Tableau
   = EmptySpace
   | Tableau { stack :: Stack, faceDown :: List Card }
 
+derive instance genericTableau :: Generic Tableau _
+
+instance encodeJsonTableau :: EncodeJson Tableau where
+  encodeJson = genericEncodeJson
+
+instance decodeJsonTableau :: DecodeJson Tableau where
+  decodeJson = genericDecodeJson
+
 -- | Attempt to add a card to the bottom of a tableau's stack.
 addCard :: Card -> Tableau -> Maybe Tableau
 addCard card =
@@ -104,6 +112,10 @@ newtype TableauIndex
 derive newtype instance eqTableauIndex :: Eq TableauIndex
 derive newtype instance ordTableauIndex :: Ord TableauIndex
 derive newtype instance showTableauIndex :: Show TableauIndex
+derive instance genericTableauIndex :: Generic TableauIndex _
+
+derive newtype instance encodeJsonTableauIndex :: EncodeJson TableauIndex
+derive newtype instance decodeJsonTableauIndex :: DecodeJson TableauIndex
 
 instance boundedTableauIndex :: Bounded TableauIndex where
   bottom = TableauIndex 0
@@ -126,6 +138,12 @@ instance boundedEnumTableauIndex :: BoundedEnum TableauIndex where
 -- | This data type encapsulates the seven tableaux in a solitaire game.
 newtype Tableaux =
   Tableaux (Map TableauIndex { stack :: Stack, faceDown :: List Card })
+
+instance encodeJsonTableaux :: EncodeJson Tableaux where
+  encodeJson = encodeJson <<< toJson
+
+instance decodeJsonTableaux :: DecodeJson Tableaux where
+  decodeJson = map fromJson <<< decodeJson
 
 run :: Tableaux -> Map TableauIndex { stack :: Stack, faceDown :: List Card }
 run (Tableaux m) = m
@@ -167,3 +185,18 @@ modify :: forall a.
 modify ix f tableaux = do
   t <- f (get ix tableaux)
   pure $ second (flip (put ix) tableaux) t
+
+-- Just for Json encoding/decoding
+newtype TableauxJson =
+  TableauxJson (Map TableauIndex (Tuple Stack (List Card)))
+
+derive newtype instance encodeJsonTableauxJson :: EncodeJson TableauxJson
+derive newtype instance decodeJsonTableauxJson :: DecodeJson TableauxJson
+
+toJson :: Tableaux -> TableauxJson
+toJson (Tableaux m) =
+  TableauxJson $ map (\{ stack, faceDown } -> Tuple stack faceDown) m
+
+fromJson :: TableauxJson -> Tableaux
+fromJson (TableauxJson m) =
+  Tableaux $ map (\(Tuple stack faceDown) -> { stack,  faceDown }) m

@@ -14,6 +14,9 @@ import Solitaire.Card (Card(..), Suit(..), Rank)
 newtype Foundations
   = Foundations (Map Suit Rank)
 
+derive newtype instance encodeJsonFoundations :: EncodeJson Foundations
+derive newtype instance decodeJsonFoundations :: DecodeJson Foundations
+
 initial :: Foundations
 initial = Foundations (Map.fromFoldable [])
 

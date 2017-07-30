@@ -22,6 +22,9 @@ import Solitaire.Card (Card(..), suitColour)
 newtype Stack
   = Stack (List Card)
 
+derive newtype instance encodeJsonStack :: EncodeJson Stack
+derive newtype instance decodeJsonStack :: DecodeJson Stack
+
 -- | Create a `Stack` from a single `Card`.
 singleton :: Card -> Stack
 singleton c = Stack (c : Nil)

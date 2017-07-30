@@ -23,6 +23,13 @@ newtype Game = Game
   }
 
 derive instance newtypeGame :: Newtype Game _
+derive instance genericGame :: Generic Game _
+
+instance encodeJsonGame :: EncodeJson Game where
+  encodeJson = genericEncodeJson
+
+instance decodeJsonGame :: DecodeJson Game where
+  decodeJson = genericDecodeJson
 
 -- | A `GameM` action is one which can modify the state of a `Game`, and which
 -- | can fail (if an illegal move is attempted).
