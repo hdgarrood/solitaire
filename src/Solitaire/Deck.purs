@@ -6,7 +6,8 @@ module Solitaire.Deck
   ) where
 
 import Solitaire.Prelude
-import Test.QuickCheck.Gen
+import Test.QuickCheck.Gen (evalGen, shuffle)
+import Test.QuickCheck.LCG (mkSeed)
 
 import Solitaire.Card (Card, Suit, Rank)
 
@@ -16,8 +17,8 @@ newtype Deck = Deck (Array Card)
 run :: Deck -> Array Card
 run (Deck cards) = cards
 
-unshuffled :: Deck
-unshuffled = Deck $ do
+unshuffled :: Array Card
+unshuffled = do
   suit <- allSuits
   rank <- allRanks
   pure $ { suit, rank }
@@ -25,4 +26,6 @@ unshuffled = Deck $ do
   allSuits = enumFromTo bottom top :: Array Suit
   allRanks = enumFromTo bottom top :: Array Rank
 
-fromSeed = 0
+fromSeed :: Int -> Deck
+fromSeed s =
+  Deck $ evalGen (shuffle unshuffled) { newSeed: mkSeed s, size: 0 }
