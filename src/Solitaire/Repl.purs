@@ -8,15 +8,14 @@ import Node.ReadLine as RL
 import Node.FS (FS)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Sync as FS
-import Solitaire.Tableaux (TableauIndex)
-import Solitaire.Game (Game, Move(..), Cursor(..), Destination(..), initialGame, applyMove)
-import Solitaire.Deck as Deck
+import Solitaire.Tableaux (TableauIndex, ixFromInt)
+import Solitaire.Game (Game, Move(..), Cursor(..), Destination(..), fromSeed, applyMove)
 import Solitaire.Ansi as Ansi
 
 type EffR = Eff (console :: CONSOLE, ref :: REF, readline :: READLINE, exception :: EXCEPTION, fs :: FS)
 
 newGameRef :: Int -> EffR (Ref Game)
-newGameRef = newRef <<< initialGame <<< Deck.fromSeed
+newGameRef = newRef <<< fromSeed
 
 move :: Ref Game -> Move -> EffR Unit
 move gameRef m = do
@@ -27,14 +26,6 @@ move gameRef m = do
     Just g' -> do
       writeRef gameRef g'
       log $ Ansi.game g'
-
-ixFromInt :: Int -> TableauIndex
-ixFromInt i =
-  case toEnum i of
-    Just r -> r
-    Nothing
-      | i <= 0    -> bottom
-      | otherwise -> top
 
 data Command
   = MoveCommand Move
@@ -56,7 +47,7 @@ parseMove =
     str ->
       case String.split (String.Pattern " ") str of
         ["m", csr, dest] ->
-          MoveObject <$> parseCursor csr <*> parseDestination dest
+          MoveStack <$> parseCursor csr <*> parseDestination dest
         _ ->
           Nothing
 

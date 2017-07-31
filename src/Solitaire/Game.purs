@@ -126,8 +126,8 @@ moveStack csr dest = do
       card <- lift $ Stack.unSingleton stack
       addToFoundations card
 
-initialGame :: Deck -> Game
-initialGame deck =
+fromDeck :: Deck -> Game
+fromDeck deck =
   case Tableaux.initial (Deck.run deck) of
     { tableaux, leftover } ->
       Game
@@ -135,3 +135,6 @@ initialGame deck =
         , foundations: Foundations.initial
         , tableaux
         }
+
+fromSeed :: Int -> Game
+fromSeed = fromDeck <<< Deck.fromSeed

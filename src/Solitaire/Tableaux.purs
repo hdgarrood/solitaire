@@ -3,6 +3,7 @@ module Solitaire.Tableaux
   , addStack
   , takeStack
   , TableauIndex
+  , ixFromInt
   , Tableaux
   , initial
   , get
@@ -77,6 +78,15 @@ fromCards =
 -- | (inclusive). The index 0 represents the left-most tableau.
 newtype TableauIndex
   = TableauIndex Int
+
+-- | A convenience function for creating a `TableauIndex`.
+ixFromInt :: Int -> TableauIndex
+ixFromInt i =
+  case toEnum i of
+    Just r -> r
+    Nothing
+      | i <= 0    -> bottom
+      | otherwise -> top
 
 derive newtype instance eqTableauIndex :: Eq TableauIndex
 derive newtype instance ordTableauIndex :: Ord TableauIndex
