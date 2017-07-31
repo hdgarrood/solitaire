@@ -3,11 +3,12 @@ module Solitaire.Deck
   , unshuffled
   , fromSeed
   , run
+  , randomDeck
   ) where
 
 import Solitaire.Prelude
 import Test.QuickCheck.Gen (evalGen, shuffle)
-import Test.QuickCheck.LCG (mkSeed)
+import Test.QuickCheck.LCG (Seed, randomSeed)
 
 import Solitaire.Card (Card(..), allSuits, allRanks)
 
@@ -21,6 +22,9 @@ unshuffled :: Array Card
 unshuffled =
   Card <$> allSuits <*> allRanks
 
-fromSeed :: Int -> Deck
-fromSeed s =
-  Deck $ evalGen (shuffle unshuffled) { newSeed: mkSeed s, size: 0 }
+fromSeed :: Seed -> Deck
+fromSeed newSeed =
+  Deck $ evalGen (shuffle unshuffled) { newSeed, size: 0 }
+
+randomDeck :: forall eff. Eff (random :: RANDOM | eff) Deck
+randomDeck = map fromSeed randomSeed

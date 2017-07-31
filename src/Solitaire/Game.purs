@@ -3,6 +3,7 @@ module Solitaire.Game where
 import Solitaire.Prelude
 
 import Data.Array as Array
+import Test.QuickCheck.LCG (Seed)
 
 import Solitaire.Card (Card)
 import Solitaire.Stack (Stack)
@@ -65,8 +66,23 @@ data Move
 derive instance eqMove :: Eq Move
 derive instance ordMove :: Ord Move
 
-applyMove :: Move -> GameM Unit
-applyMove =
+data MoveResult
+  = IllegalMove
+  | MoveOk Game
+  | GameWon
+
+applyMove :: Move -> Game -> MoveResult
+applyMove m g =
+  case execStateT (applyMoveM m) g of
+    Just g' ->
+      if isWon g'
+        then GameWon
+        else MoveOk g'
+    _ ->
+      IllegalMove
+
+applyMoveM :: Move -> GameM Unit
+applyMoveM =
   case _ of
     ResetStock -> resetStock
     AdvanceStock -> advanceStock
@@ -145,7 +161,7 @@ fromDeck deck =
         , tableaux
         }
 
-fromSeed :: Int -> Game
+fromSeed :: Seed -> Game
 fromSeed = fromDeck <<< Deck.fromSeed
 
 isWon :: Game -> Boolean

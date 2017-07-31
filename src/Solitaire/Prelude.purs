@@ -17,6 +17,7 @@ import Control.Monad.Eff (Eff) as ReExports
 import Control.Monad.Eff.Console (log, logShow, CONSOLE) as ReExports
 import Control.Monad.Eff.Unsafe (unsafePerformEff) as ReExports
 import Control.Monad.Eff.Ref (Ref, REF, newRef, writeRef, readRef) as ReExports
+import Control.Monad.Eff.Random (RANDOM) as ReExports
 import Control.Monad.Eff.Exception (EXCEPTION) as ReExports
 import Data.Enum (class Enum, class BoundedEnum, Cardinality(..), pred, succ, toEnum, fromEnum, defaultPred, defaultSucc, enumFromTo) as ReExports
 import Data.Tuple (Tuple(..), fst, snd) as ReExports

@@ -8,24 +8,21 @@ import Node.ReadLine as RL
 import Node.FS (FS)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Sync as FS
+import Test.QuickCheck.LCG (mkSeed)
 import Solitaire.Tableaux (TableauIndex, ixFromInt)
-import Solitaire.Game (Game, Move(..), Cursor(..), Destination(..), fromSeed, applyMove)
+import Solitaire.Game (Move(..), MoveResult(..), Cursor(..), Destination(..))
+import Solitaire.Game as Game
+import Solitaire.Deck (randomDeck)
 import Solitaire.Ansi as Ansi
 
-type EffR = Eff (console :: CONSOLE, ref :: REF, readline :: READLINE, exception :: EXCEPTION, fs :: FS)
-
-newGameRef :: Int -> EffR (Ref Game)
-newGameRef = newRef <<< fromSeed
-
-move :: Ref Game -> Move -> EffR Unit
-move gameRef m = do
-  g <- readRef gameRef
-  case execStateT (applyMove m) g of
-    Nothing ->
-      log $ "Invalid move"
-    Just g' -> do
-      writeRef gameRef g'
-      log $ Ansi.game g'
+type EffR = Eff
+  ( console :: CONSOLE
+  , ref :: REF
+  , readline :: READLINE
+  , exception :: EXCEPTION
+  , fs :: FS
+  , random :: RANDOM
+  )
 
 data Command
   = MoveCommand Move
@@ -78,27 +75,55 @@ parseMove =
 
 main :: EffR Unit
 main = do
-  i <- RL.createConsoleInterface RL.noCompletion
-
-  let seed = 0
-  ref <- newGameRef seed
-
-  log "New Game"
-  log "========"
-  readRef ref >>= (log <<< Ansi.game)
-
-  RL.setPrompt "> " 2 i
-  RL.setLineHandler i \line -> do
-    maybe (log "Unable to parse move") (handleCommand ref) (parseCommand (String.trim line))
-    RL.prompt i
-
-  RL.prompt i
+  ref <- newRef (Game.fromSeed (mkSeed 0))
+  iface <- RL.createConsoleInterface RL.noCompletion
+  start ref iface
 
   where
-  handleCommand ref =
-    case _ of
-      MoveCommand m ->
-        move ref m
-      DumpToFile file -> do
-        g <- readRef ref
-        FS.writeTextFile UTF8 file (stringify (encodeJson g))
+  start ref iface = do
+    writeRef ref =<< map Game.fromDeck randomDeck
+
+    log "========"
+    log "New Game"
+    log "========"
+    readRef ref >>= (log <<< Ansi.game)
+
+    RL.setPrompt "> " 2 iface
+    RL.setLineHandler iface normalLineHandler
+    RL.prompt iface
+
+    where
+    normalLineHandler line = do
+      maybe (log "Unable to parse move")
+            handleCommand
+            (parseCommand (String.trim line))
+      RL.prompt iface
+
+    victoryLineHandler line = do
+      case String.toUpper (String.trim line) of
+        "" ->
+          start ref iface
+        "Y" ->
+          start ref iface
+        _ ->
+          pure unit
+
+    handleCommand =
+      case _ of
+        MoveCommand m ->
+          move m
+        DumpToFile file -> do
+          g <- readRef ref
+          FS.writeTextFile UTF8 file (stringify (encodeJson g))
+
+    move m = do
+      g <- readRef ref
+      case Game.applyMove m g of
+        IllegalMove ->
+          log "Illegal move"
+        MoveOk g' -> do
+          writeRef ref g'
+          log $ Ansi.game g'
+        GameWon -> do
+          log "Congratulations, you won! Play again [Y/n]?"
+          RL.setLineHandler iface victoryLineHandler
