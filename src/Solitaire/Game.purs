@@ -60,7 +60,7 @@ derive instance ordDestination :: Ord Destination
 data Move
   = ResetStock
   | AdvanceStock
-  | MoveObject Cursor Destination
+  | MoveStack Cursor Destination
 
 derive instance eqMove :: Eq Move
 derive instance ordMove :: Ord Move
@@ -70,7 +70,7 @@ applyMove =
   case _ of
     ResetStock -> resetStock
     AdvanceStock -> advanceStock
-    MoveObject csr dest -> moveObject csr dest
+    MoveStack csr dest -> moveStack csr dest
 
 withStock :: forall a. (Stock -> Maybe (Tuple a Stock)) -> GameM a
 withStock f = do
@@ -114,10 +114,10 @@ takeCursor =
     StackCursor {ix, size} ->
       withTableau ix (Tableaux.takeStack size)
 
--- | Attempt to move the object pointed to by the given cursor to the given
--- | destination.
-moveObject :: Cursor -> Destination -> GameM Unit
-moveObject csr dest = do
+-- | Attempt to move the `Stack` pointed to by the given `Cursor` to the given
+-- | `Destination`.
+moveStack :: Cursor -> Destination -> GameM Unit
+moveStack csr dest = do
   stack <- takeCursor csr
   case dest of
     ToTableau ix ->
