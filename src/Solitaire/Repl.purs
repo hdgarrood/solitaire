@@ -9,7 +9,7 @@ import Node.FS (FS)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Sync as FS
 import Solitaire.Tableaux (TableauIndex)
-import Solitaire.Game (Game, Move(..), CardCursor(..), StackCursor, initialGame, applyMove)
+import Solitaire.Game (Game, Move(..), Cursor(..), Destination(..), initialGame, applyMove)
 import Solitaire.Deck as Deck
 import Solitaire.Ansi as Ansi
 
@@ -55,12 +55,8 @@ parseMove =
     "a" -> Just AdvanceStock
     str ->
       case String.split (String.Pattern " ") str of
-        ["w", ix] ->
-          map WasteToTableau (parseTableauIndex ix)
-        ["f", csr] ->
-          map MoveToFoundations (parseCardCursor csr)
-        ["s", csr, ix] ->
-          MoveStack <$> parseStackCursor csr <*> parseTableauIndex ix
+        ["m", csr, dest] ->
+          MoveObject <$> parseCursor csr <*> parseDestination dest
         _ ->
           Nothing
 
@@ -69,20 +65,25 @@ parseMove =
   parseTableauIndex =
     map ixFromInt <<< Int.fromString
 
-  parseCardCursor :: String -> Maybe CardCursor
-  parseCardCursor =
-    case _ of
-      "w" -> Just FromWaste
-      other -> map FromTableau (parseTableauIndex other)
-
-  parseStackCursor :: String -> Maybe StackCursor
-  parseStackCursor str =
+  parseCursor :: String -> Maybe Cursor
+  parseCursor str =
     case String.split (String.Pattern "-") str of
+      ["w"] ->
+        Just WasteCursor
       [ix, size] ->
-        { ix: _, size: _ } <$> parseTableauIndex ix
-                           <*> Int.fromString size
+        map StackCursor $
+          { ix: _, size: _ } <$> parseTableauIndex ix
+                             <*> Int.fromString size
       _ ->
         Nothing
+
+  parseDestination :: String -> Maybe Destination
+  parseDestination =
+    case _ of
+      "f" ->
+        Just ToFoundation
+      str ->
+        map ToTableau (parseTableauIndex str)
 
 main :: EffR Unit
 main = do

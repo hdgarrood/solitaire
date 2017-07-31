@@ -2,6 +2,7 @@ module Solitaire.Stack
   ( Stack
   , run
   , singleton
+  , unSingleton
   , size
   , split
   , pop
@@ -28,6 +29,14 @@ derive newtype instance decodeJsonStack :: DecodeJson Stack
 -- | Create a `Stack` from a single `Card`.
 singleton :: Card -> Stack
 singleton c = Stack (c : Nil)
+
+-- | If a `Stack` consists of just one `Card`, get that card, otherwise
+-- | `Nothing`.
+unSingleton :: Stack -> Maybe Card
+unSingleton =
+  case _ of
+    Stack (c:Nil) -> Just c
+    _ -> Nothing
 
 -- | Unwrap a `Stack` to access the underlying `List`.
 run :: Stack -> List Card

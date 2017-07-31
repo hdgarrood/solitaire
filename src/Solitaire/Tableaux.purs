@@ -1,7 +1,5 @@
 module Solitaire.Tableaux
   ( Tableau(..)
-  , addCard
-  , takeCard
   , addStack
   , takeStack
   , TableauIndex
@@ -32,35 +30,6 @@ instance encodeJsonTableau :: EncodeJson Tableau where
 
 instance decodeJsonTableau :: DecodeJson Tableau where
   decodeJson = genericDecodeJson
-
--- | Attempt to add a card to the bottom of a tableau's stack.
-addCard :: Card -> Tableau -> Maybe Tableau
-addCard card =
-  case _ of
-    EmptySpace ->
-      if (cardRank card == King)
-        then Just (Tableau { stack: Stack.singleton card, faceDown: Nil })
-        else Nothing
-    Tableau { stack, faceDown } ->
-      let
-        reconstruct newStack = Tableau { stack: newStack, faceDown }
-      in
-        map reconstruct (Stack.push card stack)
-
--- | Attempt to take a single card from a tableau. Returns `Nothing` if the
--- | tableau is an empty space.
-takeCard :: Tableau -> Maybe (Tuple Card Tableau)
-takeCard =
-  case _ of
-    EmptySpace ->
-      Nothing
-    Tableau { stack, faceDown } ->
-      case Stack.pop stack of
-        { card, remaining } ->
-          let
-            fromNewStack s = Tableau { stack: s, faceDown }
-          in
-            Just (Tuple card (maybe (fromCards faceDown) fromNewStack remaining))
 
 -- | Attempt to add another stack to the bottom of a tableau's stack.
 addStack :: Stack -> Tableau -> Maybe Tableau

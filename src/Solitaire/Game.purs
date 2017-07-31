@@ -6,6 +6,7 @@ import Data.Array as Array
 
 import Solitaire.Card (Card)
 import Solitaire.Stack (Stack)
+import Solitaire.Stack as Stack
 import Solitaire.Foundations (Foundations)
 import Solitaire.Foundations as Foundations
 import Solitaire.Stock (Stock)
@@ -34,26 +35,32 @@ instance decodeJsonGame :: DecodeJson Game where
 -- | can fail (if an illegal move is attempted).
 type GameM = StateT Game Maybe
 
--- | A cursor which points to a single card in an in-progress game.
-data CardCursor
-  -- | Points to the card at the top of the waste pile.
-  = FromWaste
-  -- | Points to the card at the bottom of a tableau stack.
-  | FromTableau TableauIndex
-
-derive instance eqCardCursor :: Eq CardCursor
-derive instance ordCardCursor :: Ord CardCursor
-
 -- | A cursor which points to a stack in an in-progress game.
 type StackCursor
   = { ix :: TableauIndex, size :: Int }
 
+-- | A cursor which points to any movable object in a game
+data Cursor
+  -- | Points to the card at the top of the waste pile.
+  = WasteCursor
+  -- | Points to a stack at the bottom of a tableau.
+  | StackCursor StackCursor
+
+derive instance eqCursor :: Eq Cursor
+derive instance ordCursor :: Ord Cursor
+
+-- | A destination for some movable object.
+data Destination
+  = ToFoundation
+  | ToTableau TableauIndex
+
+derive instance eqDestination :: Eq Destination
+derive instance ordDestination :: Ord Destination
+
 data Move
   = ResetStock
   | AdvanceStock
-  | WasteToTableau TableauIndex
-  | MoveToFoundations CardCursor
-  | MoveStack StackCursor TableauIndex
+  | MoveObject Cursor Destination
 
 derive instance eqMove :: Eq Move
 derive instance ordMove :: Ord Move
@@ -63,9 +70,7 @@ applyMove =
   case _ of
     ResetStock -> resetStock
     AdvanceStock -> advanceStock
-    WasteToTableau ix -> wasteToTableau ix
-    MoveToFoundations csr -> moveToFoundations csr
-    MoveStack csr ix -> moveStack csr ix
+    MoveObject csr dest -> moveObject csr dest
 
 withStock :: forall a. (Stock -> Maybe (Tuple a Stock)) -> GameM a
 withStock f = do
@@ -82,31 +87,13 @@ withTableau ix f = do
   modify (over Game (_ { tableaux = newTableaux }))
   pure x
 
-takeFromWaste :: GameM Card
-takeFromWaste =
-  withStock \s ->
-    map (\{ card, stock } -> Tuple card stock) (Stock.take s)
-
-takeFromTableau :: TableauIndex -> GameM Card
-takeFromTableau ix =
-  withTableau ix (Tableaux.takeCard)
-
+-- | Attempt to add a single card to the appropriate foundation pile.
 addToFoundations :: Card -> GameM Unit
 addToFoundations card = do
   foundations <- gets (_.foundations <<< unwrap)
   newFoundations <- lift $ Foundations.addCard card foundations
   modify (over Game (_ { foundations = newFoundations }))
   pure unit
-
-getCard :: CardCursor -> GameM Card
-getCard =
-  case _ of
-    FromWaste -> takeFromWaste
-    FromTableau ix -> takeFromTableau ix
-
-getStack :: StackCursor -> GameM Stack
-getStack { ix, size } = do
-  withTableau ix (Tableaux.takeStack size)
 
 resetStock :: GameM Unit
 resetStock =
@@ -116,20 +103,28 @@ advanceStock :: GameM Unit
 advanceStock =
   withStock (map (Tuple unit) <<< Stock.advance)
 
-wasteToTableau :: TableauIndex -> GameM Unit
-wasteToTableau ix = do
-  card <- takeFromWaste
-  withTableau ix (map (Tuple unit) <<< Tableaux.addCard card)
+-- | Attempt to pick up the `Stack` pointed to by a `Cursor`.
+takeCursor :: Cursor -> GameM Stack
+takeCursor =
+  case _ of
+    WasteCursor ->
+      map Stack.singleton $
+        withStock \s ->
+          map (\{ card, stock } -> Tuple card stock) (Stock.take s)
+    StackCursor {ix, size} ->
+      withTableau ix (Tableaux.takeStack size)
 
-moveToFoundations :: CardCursor -> GameM Unit
-moveToFoundations csr = do
-  card <- getCard csr
-  addToFoundations card
-
-moveStack :: StackCursor -> TableauIndex -> GameM Unit
-moveStack csr ix = do
-  stack <- getStack csr
-  withTableau ix (map (Tuple unit) <<< Tableaux.addStack stack)
+-- | Attempt to move the object pointed to by the given cursor to the given
+-- | destination.
+moveObject :: Cursor -> Destination -> GameM Unit
+moveObject csr dest = do
+  stack <- takeCursor csr
+  case dest of
+    ToTableau ix ->
+      withTableau ix (map (Tuple unit) <<< Tableaux.addStack stack)
+    ToFoundation -> do
+      card <- lift $ Stack.unSingleton stack
+      addToFoundations card
 
 initialGame :: Deck -> Game
 initialGame deck =
