@@ -23,7 +23,8 @@
     "purescript-argonaut-generic": "^1.2.0",
     "purescript-halogen": "^2.1.0",
     "purescript-halogen-css": "^6.0.0",
-    "purescript-css": "^3.0.0"
+    "purescript-css": "^3.0.0",
+    "purescript-dom": "^4.8.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"

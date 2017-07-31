@@ -27,6 +27,8 @@ module Solitaire.Web where
 import Solitaire.Prelude
 import Data.Int as Int
 import Data.Array as Array
+import DOM.Event.Types (KeyboardEvent)
+import DOM.Event.KeyboardEvent (code) as KeyboardEvent
 import Test.QuickCheck.LCG (mkSeed)
 
 import Solitaire.Card (Colour(..), cardSuit, suitColour, displayCard)
@@ -137,13 +139,67 @@ ui =
 
   render :: State -> H.ComponentHTML Query
   render st =
-    HH.div [ HP.class_ (HH.ClassName "game-container")
-           , style do CSS.width (px totalWidth)
-                      CSS.height (px totalHeight)
-           ]
-           (map renderCard (displayGame (snd st)))
+    let
+      props =
+        [ HP.class_ (HH.ClassName "game-container")
+        , style do CSS.width (px totalWidth)
+                   CSS.height (px totalHeight)
+        , HP.tabIndex 1 -- to allow receiving keyboard events
+        , HE.onKeyPress interpretKey
+        ]
+    in
+      HH.div_
+        [ HH.div
+            props
+            (map renderCard (displayGame (snd st)))
+        , HH.div
+            [ HP.class_ (HH.ClassName "red") ]
+            [ HH.text (show (fst st)) ]
+        ]
+
 
     where
+    interpretKey :: KeyboardEvent -> Maybe (Query Unit)
+    interpretKey ev =
+      map (_ $ unit) $
+        case KeyboardEvent.code ev of
+          "KeyH" ->
+            Just (MoveCursor DLeft)
+          "KeyJ" ->
+            Just (MoveCursor DDown)
+          "KeyK" ->
+            Just (MoveCursor DUp)
+          "KeyL" ->
+            Just (MoveCursor DRight)
+          "Space" ->
+            Just SelectStack
+          "KeyG" ->
+            Just SelectWaste
+          "KeyA" ->
+            Just AdvanceStock
+          "KeyQ" ->
+            Just (MoveToTableau (Tableaux.ixFromInt 0))
+          "KeyW" ->
+            Just (MoveToTableau (Tableaux.ixFromInt 1))
+          "KeyE" ->
+            Just (MoveToTableau (Tableaux.ixFromInt 2))
+          "KeyR" ->
+            Just (MoveToTableau (Tableaux.ixFromInt 3))
+          "KeyT" ->
+            Just (MoveToTableau (Tableaux.ixFromInt 4))
+          "KeyY" ->
+            Just (MoveToTableau (Tableaux.ixFromInt 5))
+          "KeyU" ->
+            Just (MoveToTableau (Tableaux.ixFromInt 6))
+          "KeyF" ->
+            Just MoveToFoundation
+          "KeyD" ->
+            Just DiscardSelection
+          other ->
+            unsafePerformEff do
+              log $ "unrecognised key code: " <> other
+              pure Nothing
+
     renderCard :: Tuple CardDisplay CardPosition -> H.ComponentHTML Query
     renderCard (Tuple display pos) =
       case evalPosition pos of
@@ -197,11 +253,21 @@ data Query a
   -- Discard the current selection
   | DiscardSelection a
 
+derive instance genericQuery :: Generic (Query a) _
+
+instance showQuery :: Show a => Show (Query a) where
+  show = genericShow
+
 data Direction
   = DUp
   | DDown
   | DLeft
   | DRight
+
+derive instance genericDirection :: Generic Direction _
+
+instance showDirection :: Show Direction where
+  show = genericShow
 
 type State
   = Tuple UIState Game
@@ -209,6 +275,11 @@ type State
 data UIState
   = Selection Game.StackCursor
   | WaitingForAction Game.Cursor
+
+derive instance genericUIState :: Generic UIState _
+
+instance showUIState :: Show UIState where
+  show = genericShow
 
 moveCursor :: Direction -> State -> State
 moveCursor dir st@(Tuple uiState game) =
@@ -243,15 +314,14 @@ moveCursor dir st@(Tuple uiState game) =
       { ix, size: clampedSize }
 
   -- Skip over empty spaces
-  adjustIndex next { ix, size } =
+  adjustIndex next csr@{ ix, size } =
     let
-      nextIx = next ix
-      tableau = Tableaux.get nextIx (unwrap game).tableaux
-      nextCsr = { ix: nextIx, size }
+      tableau = Tableaux.get ix (unwrap game).tableaux
+      nextCsr = { ix: next ix, size }
     in
       if tableau == Tableaux.EmptySpace
         then adjustIndex next nextCsr
-        else nextCsr
+        else csr
 
 moveCursorInDirection :: Direction -> Game.StackCursor -> Game.StackCursor
 moveCursorInDirection dir { ix, size } =

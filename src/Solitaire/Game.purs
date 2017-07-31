@@ -49,6 +49,10 @@ data Cursor
 
 derive instance eqCursor :: Eq Cursor
 derive instance ordCursor :: Ord Cursor
+derive instance genericCursor :: Generic Cursor _
+
+instance showCursor :: Show Cursor where
+  show = genericShow
 
 -- | A destination for some movable object.
 data Destination
