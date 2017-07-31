@@ -103,16 +103,25 @@ advanceStock :: GameM Unit
 advanceStock =
   withStock (map (Tuple unit) <<< Stock.advance)
 
+-- | Attempt to take the top-most card from the waste pile.
+takeWaste :: GameM Card
+takeWaste =
+  withStock \s ->
+    map (\{ card, stock } -> Tuple card stock) (Stock.take s)
+
+-- | Attempt to take a stack from a tableau.
+takeTableauStack :: StackCursor -> GameM Stack
+takeTableauStack { ix, size } =
+  withTableau ix (Tableaux.takeStack size)
+
 -- | Attempt to pick up the `Stack` pointed to by a `Cursor`.
 takeCursor :: Cursor -> GameM Stack
 takeCursor =
   case _ of
     WasteCursor ->
-      map Stack.singleton $
-        withStock \s ->
-          map (\{ card, stock } -> Tuple card stock) (Stock.take s)
-    StackCursor {ix, size} ->
-      withTableau ix (Tableaux.takeStack size)
+      map Stack.singleton takeWaste
+    StackCursor csr  ->
+      takeTableauStack csr
 
 -- | Attempt to move the `Stack` pointed to by the given `Cursor` to the given
 -- | `Destination`.
@@ -138,3 +147,6 @@ fromDeck deck =
 
 fromSeed :: Int -> Game
 fromSeed = fromDeck <<< Deck.fromSeed
+
+isWon :: Game -> Boolean
+isWon (Game { foundations }) = Foundations.isComplete foundations

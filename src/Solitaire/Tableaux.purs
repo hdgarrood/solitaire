@@ -2,6 +2,7 @@ module Solitaire.Tableaux
   ( Tableau(..)
   , addStack
   , takeStack
+  , stackSize
   , TableauIndex
   , ixFromInt
   , Tableaux
@@ -24,6 +25,7 @@ data Tableau
   = EmptySpace
   | Tableau { stack :: Stack, faceDown :: List Card }
 
+derive instance eqTableau :: Eq Tableau
 derive instance genericTableau :: Generic Tableau _
 
 instance encodeJsonTableau :: EncodeJson Tableau where
@@ -63,6 +65,16 @@ takeStack size =
               Tuple b (Tableau { stack: t, faceDown })
           in
             map reconstruct (Stack.split size stack)
+
+-- | Returns the size of the stack, or `Nothing` if the tableau is an empty
+-- | space.
+stackSize :: Tableau -> Maybe Int
+stackSize =
+  case _ of
+    EmptySpace ->
+      Nothing
+    Tableau { stack } ->
+      Just (Stack.size stack)
       
 -- | Create a `Tableau` from a list of cards by turning the head card face-up
 -- | and leaving the rest face-down.
