@@ -1,9 +1,7 @@
-module Main where
+module Main
+  ( main
+  ) where
 
-import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Solitaire.Web (main) as Web
 
-main :: forall e. Eff (console :: CONSOLE | e) Unit
-main = do
-  log "Hello sailor!"
+main = Web.main

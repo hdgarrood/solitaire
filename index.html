@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <style type=text/css>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #1a1a28;
+      }
+  
+      .game-container {
+        position: relative;
+
+        font-family: sans-serif;
+        background: #088a29;
+      }
+
+      .card {
+        position: absolute;
+
+        font-weight: bold;
+        box-shadow: 4px 4px 4px #444;
+        border: 2px solid black;
+        border-radius: 4px;
+        padding: 10px;
+        background: white;
+      }
+
+      .red {
+        color: red;
+      }
+      
+      .black {
+        color: black;
+      }
+
+      .face-down {
+        background: repeating-linear-gradient(
+          -45deg,
+          #606dbc,
+          #606dbc 10px,
+          #465298 10px,
+          #465298 20px
+        );
+      }
+
+      .empty-space {
+        box-shadow: none;
+        background: inherit;
+        border: 2px dashed #333;
+      }
+
+      .selected {
+        outline: 3px solid yellow;
+      }
+    </style>
+    <script type="text/javascript" src="app.js"></script>
+  </head>
+  <body>
+  </body>
+</html>

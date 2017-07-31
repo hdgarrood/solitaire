@@ -1,28 +1,8 @@
-module Solitaire.Web where
-
-import Solitaire.Prelude
-import Test.QuickCheck.LCG (mkSeed)
-import Solitaire.Game (Game, MoveResult(..))
-import Solitaire.Game as Game
-import Solitaire.Tableaux (TableauIndex)
-import Solitaire.Tableaux as Tableaux
-import Halogen as H
-import Halogen.HTML as HH
-import Halogen.Aff as HA
-import Halogen.HTML.Events as HE
-import Halogen.HTML.Properties as HP
-import Halogen.VDom.Driver (runUI)
-
-main :: Eff (HA.HalogenEffects ()) Unit
-main = HA.runHalogenAff do
-  body <- HA.awaitBody
-  runUI ui unit body
-
 -- | The web UI is entirely driven through keyboard bindings (for now).
 -- |
 -- | The UI has two states:
--- | 1) Selection. In this state there is a cursor which can be moved around the
--- |    tableaux
+-- | 1) Selection. In this state there is a cursor which can be moved around
+-- |    the tableaux
 -- | 2) A stack has been selected; waiting for a command to see what to do with
 -- |    it
 -- |
@@ -42,6 +22,34 @@ main = HA.runHalogenAff do
 -- | * Move to a tableau: 'q' 'w' 'e' 'r' 't' 'y' 'u'
 -- | * Move to foundation pile: 'f'
 -- | * Discard selection: 'd'
+module Solitaire.Web where
+
+import Solitaire.Prelude
+import Data.Int as Int
+import Data.Array as Array
+import Test.QuickCheck.LCG (mkSeed)
+
+import Solitaire.Card (Colour(..), cardSuit, suitColour, displayCard)
+import Solitaire.Game (Game, MoveResult(..))
+import Solitaire.Game as Game
+import Solitaire.Tableaux (TableauIndex)
+import Solitaire.Tableaux as Tableaux
+import Solitaire.Web.Positioning
+  (CardDisplay(..), CardPosition, evalPosition, displayGame, totalWidth,
+   totalHeight, cardWidth, cardHeight)
+import Halogen as H
+import Halogen.HTML as HH
+import Halogen.Aff as HA
+import Halogen.HTML.Events as HE
+import CSS as CSS
+import Halogen.HTML.CSS (style)
+import Halogen.HTML.Properties as HP
+import Halogen.VDom.Driver (runUI)
+
+main :: Eff (HA.HalogenEffects ()) Unit
+main = HA.runHalogenAff do
+  body <- HA.awaitBody
+  runUI ui unit body
 
 ui :: forall m. H.Component HH.HTML Query Unit Void m
 ui =
@@ -72,13 +80,14 @@ ui =
           modify (second advanceOrReset)
         pure next
       MoveToTableau ix next -> do
-        applyMove (Game.MoveStack csr (Game.ToTableau ix))
+        onlyWaiting \csr ->
+          applyMove (Game.MoveStack csr (Game.ToTableau ix))
         pure next
       MoveToFoundation next -> do
-        onlyWaiting \
-        applyMove (Game.MoveStack csr Game.ToFoundation)
+        onlyWaiting \csr ->
+          applyMove (Game.MoveStack csr Game.ToFoundation)
         pure next
-      DiscardSelection next ->
+      DiscardSelection next -> do
         discardSelection
         pure next
 
@@ -110,6 +119,7 @@ ui =
             Game.StackCursor csr ->
               Selection csr
             Game.WasteCursor ->
+              -- todo: ensure this points to something
               fst initialState
 
     applyMove move = do
@@ -121,12 +131,55 @@ ui =
         Game.IllegalMove ->
           -- todo: wiggle animation
           pure unit
-        Game.MoveOk game' ->
+        Game.MoveOk game' -> do
           discardSelection
           modify (second (const game'))
 
   render :: State -> H.ComponentHTML Query
-  render _ = HH.div [] []
+  render st =
+    HH.div [ HP.class_ (HH.ClassName "game-container")
+           , style do CSS.width (px totalWidth)
+                      CSS.height (px totalHeight)
+           ]
+           (map renderCard (displayGame (snd st)))
+
+    where
+    renderCard :: Tuple CardDisplay CardPosition -> H.ComponentHTML Query
+    renderCard (Tuple display pos) =
+      case evalPosition pos of
+        Tuple left_ top_ ->
+          HH.div [ HP.classes (classesFor display)
+                 , style do CSS.top (px top_)
+                            CSS.left (px left_)
+                            CSS.width (px cardWidth)
+                            CSS.height (px cardHeight)
+                 ]
+                 [ HH.text (textFor display)
+                 ]
+
+    px = CSS.px <<< Int.toNumber
+
+    classesFor :: CardDisplay -> Array HH.ClassName
+    classesFor display =
+      map HH.ClassName $
+        (Array.snoc ["card"]) $
+          case display of
+            FaceUp c ->
+              case suitColour (cardSuit c) of
+                Red -> "red"
+                Black -> "black"
+            FaceDown ->
+              "face-down"
+            EmptySpace ->
+              "empty-space"
+
+    textFor :: CardDisplay -> String
+    textFor =
+      case _ of
+        FaceUp c ->
+          displayCard c
+        _ ->
+          ""
 
 data Query a
   -- Move the stack cursor in a given direction

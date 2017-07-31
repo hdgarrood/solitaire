@@ -5,6 +5,7 @@ module Solitaire.Tableaux
   , stackSize
   , TableauIndex
   , ixFromInt
+  , allIndices
   , Tableaux
   , initial
   , get
@@ -99,6 +100,9 @@ ixFromInt i =
     Nothing
       | i <= 0    -> bottom
       | otherwise -> top
+
+allIndices :: Array TableauIndex
+allIndices = enumFromTo bottom top
 
 derive newtype instance eqTableauIndex :: Eq TableauIndex
 derive newtype instance ordTableauIndex :: Ord TableauIndex
