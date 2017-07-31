@@ -166,3 +166,10 @@ fromSeed = fromDeck <<< Deck.fromSeed
 
 isWon :: Game -> Boolean
 isWon (Game { foundations }) = Foundations.isComplete foundations
+
+wonGame :: Game
+wonGame = Game
+  { foundations: Foundations.completed
+  , tableaux: (Tableaux.initial []).tableaux
+  , stock: Stock.initial Nil
+  }

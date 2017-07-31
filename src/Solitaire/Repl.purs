@@ -105,8 +105,10 @@ main = do
           start ref iface
         "Y" ->
           start ref iface
+        "N" ->
+          RL.close iface
         _ ->
-          pure unit
+          RL.prompt iface
 
     handleCommand =
       case _ of

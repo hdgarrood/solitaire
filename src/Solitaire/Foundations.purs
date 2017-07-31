@@ -1,6 +1,7 @@
 module Solitaire.Foundations
   ( Foundations
   , initial
+  , completed
   , lookupSuit
   , addCard
   , toArray
@@ -20,6 +21,9 @@ derive newtype instance decodeJsonFoundations :: DecodeJson Foundations
 
 initial :: Foundations
 initial = Foundations (Map.fromFoldable [])
+
+completed :: Foundations
+completed = Foundations (Map.fromFoldable (map (flip Tuple King) allSuits))
 
 -- | Lookup the highest card in the foundation pile for a given suit; returns
 -- | `Nothing` if there are no cards in the pile for the given suit.
