@@ -38,7 +38,7 @@ import Solitaire.Tableaux (TableauIndex)
 import Solitaire.Tableaux as Tableaux
 import Solitaire.Web.Positioning
   (CardDisplay(..), CardPosition, evalPosition, displayGame, totalWidth,
-   totalHeight, cardWidth, cardHeight)
+   totalHeight, cardWidth, cardHeight, displayCursor, displayStackCursor)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.Aff as HA
@@ -112,17 +112,17 @@ ui =
         _ ->
           pure unit
 
-    -- Transition from state 2 back to state 1 without doing anything, e.g.
-    -- after cancelling.
-    discardSelection =
+    -- Transition from state 2 back to state 1 without doing anything, i.e.
+    -- after cancelling, or after having applied a move successfully.
+    discardSelection = do
+      game <- gets snd
       onlyWaiting \csr' ->
-        modify $ first $ const $
+        modify $ first $ const $ Selection $ adjustWith succOrLoop game $
           case csr' of
             Game.StackCursor csr ->
-              Selection csr
+              csr
             Game.WasteCursor ->
-              -- todo: ensure this points to something
-              fst initialState
+              { ix: bottom, size: 1 }
 
     applyMove move = do
       game <- gets snd
@@ -134,8 +134,8 @@ ui =
           -- todo: wiggle animation
           pure unit
         Game.MoveOk game' -> do
-          discardSelection
           modify (second (const game'))
+          discardSelection
 
   render :: State -> H.ComponentHTML Query
   render st =
@@ -151,12 +151,9 @@ ui =
       HH.div_
         [ HH.div
             props
-            (map renderCard (displayGame (snd st)))
-        , HH.div
-            [ HP.class_ (HH.ClassName "red") ]
-            [ HH.text (show (fst st)) ]
+            ((map renderCard (displayGame (snd st))) <>
+              [ renderSelection st ])
         ]
-
 
     where
     interpretKey :: KeyboardEvent -> Maybe (Query Unit)
@@ -212,6 +209,35 @@ ui =
                  ]
                  [ HH.text (textFor display)
                  ]
+
+    renderSelection :: State -> H.ComponentHTML Query
+    renderSelection (Tuple uiState game) =
+      let
+        selectionClasses =
+          ["selection"] <>
+            case uiState of
+              WaitingForAction _ ->
+                ["selection-fixed"]
+              _ ->
+                []
+
+        go { pos, height } =
+          case evalPosition pos of
+            Tuple left_ top_ ->
+              HH.div
+                [ HP.classes $ map HH.ClassName selectionClasses
+                 , style do CSS.top (px top_)
+                            CSS.left (px left_)
+                            CSS.width (px cardWidth)
+                            CSS.height (px height)
+                ]
+                []
+      in
+        go $ case uiState of
+          Selection stackCsr ->
+            displayStackCursor game stackCsr
+          WaitingForAction csr ->
+            displayCursor game csr
 
     px = CSS.px <<< Int.toNumber
 
@@ -293,16 +319,17 @@ moveCursor dir st@(Tuple uiState game) =
       st
 
   where
-  -- This function ensures that the cursor points at something valid
   adjust csr =
     case dir of
       DLeft ->
-        adjustIndex predOrLoop csr
-      DRight ->
-        adjustIndex succOrLoop csr
+        adjustWith predOrLoop game csr
       _ ->
-        adjustSize csr
+        adjustWith succOrLoop game csr
 
+-- This function ensures that the cursor points at something valid
+adjustWith :: (TableauIndex -> TableauIndex) -> Game -> Game.StackCursor -> Game.StackCursor
+adjustWith next game = adjustSize >>> adjustIndex next
+  where
   -- Ensure that the cursor doesn't ask for a stack which is too large or too
   -- small
   adjustSize { ix, size } =

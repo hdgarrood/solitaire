@@ -12,7 +12,7 @@ import Solitaire.Stock (Stock)
 import Solitaire.Stock as Stock
 import Solitaire.Tableaux (Tableaux, Tableau, TableauIndex)
 import Solitaire.Tableaux as Tableaux
-import Solitaire.Game (Game(..))
+import Solitaire.Game (Game(..), Cursor(..), StackCursor(..))
 
 data CardPosition
   -- A card lies in the top half of the board, i.e. the foundations, waste, and
@@ -83,6 +83,35 @@ displayGame (Game g) =
   displayFoundations g.foundations <>
   displayStock g.stock <>
   displayTableaux g.tableaux
+
+-- | Returns the top-left corner of the cursor as a CardPosition, plus its
+-- | height in pixels
+displayCursor :: Game -> Cursor -> { pos :: CardPosition, height :: Int }
+displayCursor game =
+  case _ of
+    WasteCursor ->
+      { pos: TopHalf 5, height: cardHeight }
+    StackCursor csr ->
+      displayStackCursor game csr
+
+displayStackCursor :: Game -> StackCursor -> { pos :: CardPosition, height :: Int }
+displayStackCursor (Game g) { ix, size } =
+  case Tableaux.get ix g.tableaux of
+    Tableaux.EmptySpace ->
+      -- shouldn't happen, but we'll handle it anyway
+      { pos: pos 0
+      , height: cardHeight
+      }
+    Tableaux.Tableau { stack, faceDown } ->
+      let
+        startAt = List.length faceDown + (Stack.size stack - size)
+      in
+        { pos: pos startAt
+        , height: cardHeight + (stackOffset * (size - 1))
+      }
+
+  where
+  pos = BottomHalf (fromEnum ix)
 
 displayFoundations :: Foundations -> Array (Tuple CardDisplay CardPosition)
 displayFoundations =
