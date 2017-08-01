@@ -22,9 +22,9 @@ them.
 
 ### Console UI
 
-The console UI is uses node.js's `readline` module. For printing things, it
-uses ANSI escape codes and unicode line-drawing characters to make the output
-recognisable as a Solitaire game.
+The console UI uses node.js's `readline` module for a repl-ish interface. For
+printing things, it uses ANSI escape codes and unicode line-drawing characters
+to make the output recognisable as a Solitaire game.
 
 The console UI code is contained in the following modules:
 
