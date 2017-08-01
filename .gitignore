@@ -6,4 +6,5 @@
 /.psc*
 /.purs*
 /.psa*
-dist/
+web/app.js
+game.js
