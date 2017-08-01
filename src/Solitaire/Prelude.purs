@@ -14,6 +14,7 @@ import Control.Monad.Trans.Class (lift) as ReExports
 import Control.Monad.State.Trans (StateT, runStateT, evalStateT, execStateT) as ReExports
 import Control.Monad.State.Class (gets, put, modify) as ReExports
 import Control.Monad.Eff (Eff) as ReExports
+import Control.Monad.Eff.Class (class MonadEff, liftEff) as ReExports
 import Control.Monad.Eff.Console (log, logShow, CONSOLE) as ReExports
 import Control.Monad.Eff.Unsafe (unsafePerformEff) as ReExports
 import Control.Monad.Eff.Ref (Ref, REF, newRef, writeRef, readRef) as ReExports

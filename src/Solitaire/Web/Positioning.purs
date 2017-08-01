@@ -12,7 +12,7 @@ import Solitaire.Stock (Stock)
 import Solitaire.Stock as Stock
 import Solitaire.Tableaux (Tableaux, Tableau, TableauIndex)
 import Solitaire.Tableaux as Tableaux
-import Solitaire.Game (Game(..), Cursor(..), StackCursor(..))
+import Solitaire.Game (Game(..), Cursor(..), StackCursor)
 
 data CardPosition
   -- A card lies in the top half of the board, i.e. the foundations, waste, and

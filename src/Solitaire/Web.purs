@@ -29,11 +29,11 @@ import Data.Int as Int
 import Data.Array as Array
 import DOM.Event.Types (KeyboardEvent)
 import DOM.Event.KeyboardEvent (code) as KeyboardEvent
-import Test.QuickCheck.LCG (mkSeed)
 
 import Solitaire.Card (Colour(..), cardSuit, suitColour, displayCard)
 import Solitaire.Game (Game, MoveResult(..))
 import Solitaire.Game as Game
+import Solitaire.Deck (Deck, randomDeck)
 import Solitaire.Tableaux (TableauIndex)
 import Solitaire.Tableaux as Tableaux
 import Solitaire.Web.Positioning
@@ -48,15 +48,16 @@ import Halogen.HTML.CSS (style)
 import Halogen.HTML.Properties as HP
 import Halogen.VDom.Driver (runUI)
 
-main :: Eff (HA.HalogenEffects ()) Unit
+main :: Eff (HA.HalogenEffects (random :: RANDOM)) Unit
 main = HA.runHalogenAff do
   body <- HA.awaitBody
-  runUI ui unit body
+  deck <- liftEff randomDeck
+  runUI (ui deck) unit body
 
-ui :: forall m. H.Component HH.HTML Query Unit Void m
-ui =
+ui :: forall m. Deck -> H.Component HH.HTML Query Unit Void m
+ui deck =
   H.component
-    { initialState: const initialState
+    { initialState: const (initialState deck)
     , eval
     , render
     , receiver: const Nothing
@@ -342,7 +343,7 @@ moveCursor dir st@(Tuple uiState game) =
 
 -- This function ensures that the cursor points at something valid
 adjustWith :: (TableauIndex -> TableauIndex) -> Game -> Game.StackCursor -> Game.StackCursor
-adjustWith next game = adjustSize >>> adjustIndex next
+adjustWith next game = adjustSize >>> adjustIndex
   where
   -- Ensure that the cursor doesn't ask for a stack which is too large or too
   -- small
@@ -355,13 +356,13 @@ adjustWith next game = adjustSize >>> adjustIndex next
       { ix, size: clampedSize }
 
   -- Skip over empty spaces
-  adjustIndex next csr@{ ix, size } =
+  adjustIndex csr@{ ix, size } =
     let
       tableau = Tableaux.get ix (unwrap game).tableaux
       nextCsr = { ix: next ix, size }
     in
       if tableau == Tableaux.EmptySpace
-        then adjustIndex next nextCsr
+        then adjustIndex nextCsr
         else csr
 
 moveCursorInDirection :: Direction -> Game.StackCursor -> Game.StackCursor
@@ -390,8 +391,8 @@ advanceOrReset g =
     GameWon ->
       unsafeCrashWith "cannot win by advancing stock"
 
-initialState :: State
-initialState =
+initialState :: Deck -> State
+initialState deck =
   Tuple
     (Selection { ix: Tableaux.ixFromInt 0, size: 1 })
-    (Game.fromSeed (mkSeed 0))
+    (Game.fromDeck deck)
