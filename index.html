@@ -13,7 +13,7 @@
         align-items: center;
         background: #1a1a28;
       }
-  
+
       .game-container {
         position: relative;
 
@@ -23,6 +23,20 @@
 
       .game-container:focus {
         outline: 1px solid red;
+      }
+
+      .game-container .unfocused {
+        display: none;
+        font-size: 150%;
+        position: absolute;
+        background: #cec;
+        margin: 1em;
+        padding: 0 1em 0 1em;
+        border: 2px solid #ece;
+      }
+
+      .game-container:not(:focus) .unfocused {
+        display: block;
       }
 
       .card {
@@ -39,7 +53,7 @@
       .red {
         color: red;
       }
-      
+
       .black {
         color: black;
       }

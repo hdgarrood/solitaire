@@ -147,13 +147,27 @@ ui =
         , HP.tabIndex 1 -- to allow receiving keyboard events
         , HE.onKeyPress interpretKey
         ]
-    in
-      HH.div_
+      cards =
+        map renderCard (displayGame (snd st))
+      selection =
+        [ renderSelection st ]
+      notFocusedReminder =
         [ HH.div
-            props
-            ((map renderCard (displayGame (snd st))) <>
-              [ renderSelection st ])
+            [ HP.class_ (HH.ClassName "unfocused") ]
+            [ HH.p_ [HH.text "Click here to play"]
+            , HH.p_ [HH.text "Controls:"]
+            , HH.p_ [HH.text "hjkl [move selection]"]
+            , HH.p_ [HH.text "Space [fix selection]"]
+            , HH.p_ [HH.text "g [select top card from waste pile]"]
+            , HH.p_ [HH.text "a [draw into waste pile]"]
+            , HH.p_ [HH.text "qwertyu [move selection to tableau]"]
+            , HH.p_ [HH.text "d [discard selection]"]
+            ]
         ]
+    in
+      HH.div
+        props
+        (cards <> selection <> notFocusedReminder)
 
     where
     interpretKey :: KeyboardEvent -> Maybe (Query Unit)
