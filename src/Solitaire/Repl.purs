@@ -77,6 +77,7 @@ main :: EffR Unit
 main = do
   ref <- newRef (Game.fromSeed (mkSeed 0))
   iface <- RL.createConsoleInterface RL.noCompletion
+  welcome
   start ref iface
 
   where
@@ -129,3 +130,20 @@ main = do
         GameWon -> do
           log "Congratulations, you won! Play again [Y/n]?"
           RL.setLineHandler iface victoryLineHandler
+
+  welcome = do
+    log "===================="
+    log "PureScript Solitaire"
+    log "===================="
+    log "Controls:"
+    log " a               - draw into the waste pile"
+    log " r               - reset the waste pile"
+    log " m <src> <dest>  - move a card or stack of cards"
+    log ""
+    log " <src> should be one of:"
+    log "   w   - take a card from the waste pile"
+    log "   N-M - take M cards from the Nth (0-based) tableau"
+    log ""
+    log " <dest> should be one of:"
+    log "   f   - send the card to a foundation pile"
+    log "   N   - send the card / stack of cards to the Nth (0-based) tableau"
