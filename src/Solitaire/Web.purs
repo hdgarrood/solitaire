@@ -162,6 +162,7 @@ ui deck =
             , HH.p_ [HH.text "g [select top card from waste pile]"]
             , HH.p_ [HH.text "a [draw into waste pile]"]
             , HH.p_ [HH.text "qwertyu [move selection to tableau]"]
+            , HH.p_ [HH.text "f [move selected card to foundation pile]"]
             , HH.p_ [HH.text "d [discard selection]"]
             ]
         ]
