@@ -13,7 +13,7 @@ module Solitaire.Tableaux
   , modify
   ) where
 
-import Solitaire.Prelude hiding (put, modify)
+import Solitaire.Prelude hiding (get, put, modify)
 import Data.Map as Map
 import Data.Array as Array
 
