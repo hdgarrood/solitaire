@@ -35,7 +35,7 @@ The console UI code is contained in the following modules:
 To play with the console UI, run
 
 ```
-$ pulp build --main Solitaire.Repl --to game.js && node game.js
+$ spago bundle-app --main Solitaire.Repl --to game.js && node game.js
 ```
 
 ### Web UI
@@ -48,7 +48,7 @@ The web UI uses Halogen, and is contained in the following modules:
 To play with the web UI, run
 
 ```
-$ pulp build --main Solitaire.Web --to web/app.js
+$ spago bundle-app --main Solitaire.Web --to web/app.js
 ```
 
 and then open `web/index.html` in a browser window.
