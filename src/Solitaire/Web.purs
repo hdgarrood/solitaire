@@ -27,8 +27,8 @@ module Solitaire.Web where
 import Solitaire.Prelude
 import Data.Int as Int
 import Data.Array as Array
-import DOM.Event.Types (KeyboardEvent)
-import DOM.Event.KeyboardEvent (code) as KeyboardEvent
+import Web.UIEvent.KeyboardEvent (KeyboardEvent)
+import Web.UIEvent.KeyboardEvent as KeyboardEvent
 
 import Solitaire.Card (Colour(..), cardSuit, suitColour, displayCard)
 import Solitaire.Game (Game, MoveResult(..))
@@ -48,51 +48,46 @@ import Halogen.HTML.CSS (style)
 import Halogen.HTML.Properties as HP
 import Halogen.VDom.Driver (runUI)
 
-main :: Eff (HA.HalogenEffects (random :: RANDOM)) Unit
+main :: Effect Unit
 main = HA.runHalogenAff do
   body <- HA.awaitBody
-  deck <- liftEff randomDeck
+  deck <- liftEffect randomDeck
   runUI (ui deck) unit body
 
-ui :: forall m. Deck -> H.Component HH.HTML Query Unit Void m
+ui ::
+  forall query input output m .
+  Deck ->
+  H.Component HH.HTML query input output m
 ui deck =
-  H.component
+  H.mkComponent
     { initialState: const (initialState deck)
-    , eval
+    , eval: H.mkEval (H.defaultEval { handleAction = handleAction })
     , render
-    , receiver: const Nothing
     }
   where
-  eval :: Query ~> H.ComponentDSL State Query Void m
-  eval =
+  handleAction :: Action -> H.HalogenM State Action () output m Unit
+  handleAction =
     case _ of
-      MoveCursor dir next -> do
+      MoveCursor dir -> do
         onlySelection \_ ->
-          modify (moveCursor dir)
-        pure next
-      SelectStack next -> do
+          modify_ (moveCursor dir)
+      SelectStack -> do
         onlySelection \csr ->
-          modify (first (const (WaitingForAction (Game.StackCursor csr))))
-        pure next
-      SelectWaste next -> do
+          modify_ (first (const (WaitingForAction (Game.StackCursor csr))))
+      SelectWaste -> do
         onlySelection \_ ->
-          modify (first (const (WaitingForAction Game.WasteCursor)))
-        pure next
-      AdvanceStock next -> do
+          modify_ (first (const (WaitingForAction Game.WasteCursor)))
+      AdvanceStock -> do
         onlySelection \_ ->
-          modify (second advanceOrReset)
-        pure next
-      MoveToTableau ix next -> do
+          modify_ (second advanceOrReset)
+      MoveToTableau ix -> do
         onlyWaiting \csr ->
           applyMove (Game.MoveStack csr (Game.ToTableau ix))
-        pure next
-      MoveToFoundation next -> do
+      MoveToFoundation -> do
         onlyWaiting \csr ->
           applyMove (Game.MoveStack csr Game.ToFoundation)
-        pure next
-      DiscardSelection next -> do
+      DiscardSelection -> do
         discardSelection
-        pure next
 
     where
     -- Only do anything if we are in the `Selection` UI state.
@@ -118,7 +113,7 @@ ui deck =
     discardSelection = do
       game <- gets snd
       onlyWaiting \csr' ->
-        modify $ first $ const $ Selection $ adjustWith succOrLoop game $
+        modify_ $ first $ const $ Selection $ adjustWith succOrLoop game $
           case csr' of
             Game.StackCursor csr ->
               csr
@@ -135,10 +130,10 @@ ui deck =
           -- todo: wiggle animation
           pure unit
         Game.MoveOk game' -> do
-          modify (second (const game'))
+          modify_ (second (const game'))
           discardSelection
 
-  render :: State -> H.ComponentHTML Query
+  render :: State -> HTML m
   render st =
     let
       props =
@@ -146,7 +141,7 @@ ui deck =
         , style do CSS.width (px totalWidth)
                    CSS.height (px totalHeight)
         , HP.tabIndex 1 -- to allow receiving keyboard events
-        , HE.onKeyPress interpretKey
+        , HE.onKeyDown interpretKey
         ]
       cards =
         map renderCard (displayGame (snd st))
@@ -172,48 +167,47 @@ ui deck =
         (cards <> selection <> notFocusedReminder)
 
     where
-    interpretKey :: KeyboardEvent -> Maybe (Query Unit)
+    interpretKey :: KeyboardEvent -> Maybe Action
     interpretKey ev =
-      map (_ $ unit) $
-        case KeyboardEvent.code ev of
-          "KeyH" ->
-            Just (MoveCursor DLeft)
-          "KeyJ" ->
-            Just (MoveCursor DDown)
-          "KeyK" ->
-            Just (MoveCursor DUp)
-          "KeyL" ->
-            Just (MoveCursor DRight)
-          "Space" ->
-            Just SelectStack
-          "KeyG" ->
-            Just SelectWaste
-          "KeyA" ->
-            Just AdvanceStock
-          "KeyQ" ->
-            Just (MoveToTableau (Tableaux.ixFromInt 0))
-          "KeyW" ->
-            Just (MoveToTableau (Tableaux.ixFromInt 1))
-          "KeyE" ->
-            Just (MoveToTableau (Tableaux.ixFromInt 2))
-          "KeyR" ->
-            Just (MoveToTableau (Tableaux.ixFromInt 3))
-          "KeyT" ->
-            Just (MoveToTableau (Tableaux.ixFromInt 4))
-          "KeyY" ->
-            Just (MoveToTableau (Tableaux.ixFromInt 5))
-          "KeyU" ->
-            Just (MoveToTableau (Tableaux.ixFromInt 6))
-          "KeyF" ->
-            Just MoveToFoundation
-          "KeyD" ->
-            Just DiscardSelection
-          other ->
-            unsafePerformEff do
-              log $ "unrecognised key code: " <> other
-              pure Nothing
+      case KeyboardEvent.code ev of
+        "KeyH" ->
+          Just (MoveCursor DLeft)
+        "KeyJ" ->
+          Just (MoveCursor DDown)
+        "KeyK" ->
+          Just (MoveCursor DUp)
+        "KeyL" ->
+          Just (MoveCursor DRight)
+        "Space" ->
+          Just SelectStack
+        "KeyG" ->
+          Just SelectWaste
+        "KeyA" ->
+          Just AdvanceStock
+        "KeyQ" ->
+          Just (MoveToTableau (Tableaux.ixFromInt 0))
+        "KeyW" ->
+          Just (MoveToTableau (Tableaux.ixFromInt 1))
+        "KeyE" ->
+          Just (MoveToTableau (Tableaux.ixFromInt 2))
+        "KeyR" ->
+          Just (MoveToTableau (Tableaux.ixFromInt 3))
+        "KeyT" ->
+          Just (MoveToTableau (Tableaux.ixFromInt 4))
+        "KeyY" ->
+          Just (MoveToTableau (Tableaux.ixFromInt 5))
+        "KeyU" ->
+          Just (MoveToTableau (Tableaux.ixFromInt 6))
+        "KeyF" ->
+          Just MoveToFoundation
+        "KeyD" ->
+          Just DiscardSelection
+        other ->
+          unsafePerformEffect do
+            log $ "unrecognised key code: " <> other
+            pure Nothing
 
-    renderCard :: Tuple CardDisplay CardPosition -> H.ComponentHTML Query
+    renderCard :: Tuple CardDisplay CardPosition -> HTML m
     renderCard (Tuple display pos) =
       case evalPosition pos of
         Tuple left_ top_ ->
@@ -226,7 +220,7 @@ ui deck =
                  [ HH.text (textFor display)
                  ]
 
-    renderSelection :: State -> H.ComponentHTML Query
+    renderSelection :: State -> HTML m
     renderSelection (Tuple uiState game) =
       let
         selectionClasses =
@@ -279,26 +273,28 @@ ui deck =
         _ ->
           ""
 
-data Query a
+data Action
   -- Move the stack cursor in a given direction
-  = MoveCursor Direction a
+  = MoveCursor Direction
   -- Choose the stack pointed to by the current cursor as the selection
-  | SelectStack a
+  | SelectStack
   -- Choose the topmost waste card as the selection
-  | SelectWaste a
+  | SelectWaste
   -- Advance/reset the stock pile
-  | AdvanceStock a
+  | AdvanceStock
   -- Move the current selection to a tableau
-  | MoveToTableau TableauIndex a
+  | MoveToTableau TableauIndex
   -- Move the current selection to the appropriate foundation pile
-  | MoveToFoundation a
+  | MoveToFoundation
   -- Discard the current selection
-  | DiscardSelection a
+  | DiscardSelection
 
-derive instance genericQuery :: Generic (Query a) _
+derive instance genericAction :: Generic Action _
 
-instance showQuery :: Show a => Show (Query a) where
+instance showAction :: Show Action where
   show = genericShow
+
+type HTML m = H.ComponentHTML Action () m
 
 data Direction
   = DUp

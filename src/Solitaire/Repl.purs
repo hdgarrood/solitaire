@@ -3,26 +3,16 @@ module Solitaire.Repl where
 import Solitaire.Prelude
 import Data.String as String
 import Data.Int as Int
-import Node.ReadLine (READLINE)
+import Effect.Ref as Ref
 import Node.ReadLine as RL
-import Node.FS (FS)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Sync as FS
-import Test.QuickCheck.LCG (mkSeed)
+import Random.LCG (mkSeed)
 import Solitaire.Tableaux (TableauIndex, ixFromInt)
 import Solitaire.Game (Move(..), MoveResult(..), Cursor(..), Destination(..))
 import Solitaire.Game as Game
 import Solitaire.Deck (randomDeck)
 import Solitaire.Ansi as Ansi
-
-type EffR = Eff
-  ( console :: CONSOLE
-  , ref :: REF
-  , readline :: READLINE
-  , exception :: EXCEPTION
-  , fs :: FS
-  , random :: RANDOM
-  )
 
 data Command
   = MoveCommand Move
@@ -73,21 +63,22 @@ parseMove =
       str ->
         map ToTableau (parseTableauIndex str)
 
-main :: EffR Unit
+main :: Effect Unit
 main = do
-  ref <- newRef (Game.fromSeed (mkSeed 0))
+  ref <- Ref.new (Game.fromSeed (mkSeed 0))
   iface <- RL.createConsoleInterface RL.noCompletion
   welcome
   start ref iface
 
   where
   start ref iface = do
-    writeRef ref =<< map Game.fromDeck randomDeck
+    newGame <- map Game.fromDeck randomDeck
+    Ref.write newGame ref
 
     log "========"
     log "New Game"
     log "========"
-    readRef ref >>= (log <<< Ansi.game)
+    log (Ansi.game newGame)
 
     RL.setPrompt "> " 2 iface
     RL.setLineHandler iface normalLineHandler
@@ -116,16 +107,16 @@ main = do
         MoveCommand m ->
           move m
         DumpToFile file -> do
-          g <- readRef ref
+          g <- Ref.read ref
           FS.writeTextFile UTF8 file (stringify (encodeJson g))
 
     move m = do
-      g <- readRef ref
+      g <- Ref.read ref
       case Game.applyMove m g of
         IllegalMove ->
           log "Illegal move"
         MoveOk g' -> do
-          writeRef ref g'
+          Ref.write g' ref
           log $ Ansi.game g'
         GameWon -> do
           log "Congratulations, you won! Play again [Y/n]?"

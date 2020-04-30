@@ -2,6 +2,7 @@ module Solitaire.Ansi where
 
 import Solitaire.Prelude
 import Data.Array as Array
+import Data.List.NonEmpty (NonEmptyList)
 import Data.List as List
 import Data.String as String
 import Ansi.Codes as Ansi
@@ -181,7 +182,7 @@ cardWidth = 4
 cardHeight :: Int
 cardHeight = 4
 
-graphicsForSuit :: Suit -> Array Ansi.GraphicsParam
+graphicsForSuit :: Suit -> NonEmptyList Ansi.GraphicsParam
 graphicsForSuit suit =
   foreground (ansiColorForSuit suit) <>
   background Ansi.White <>

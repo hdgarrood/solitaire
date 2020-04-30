@@ -1,6 +1,4 @@
-/bower_components/
 /node_modules/
-/.pulp-cache/
 /output/
 /generated-docs/
 /.psc*
@@ -8,3 +6,4 @@
 /.psa*
 web/app.js
 game.js
+.spago/

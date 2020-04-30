@@ -8,7 +8,7 @@ module Solitaire.Deck
 
 import Solitaire.Prelude
 import Test.QuickCheck.Gen (evalGen, shuffle)
-import Test.QuickCheck.LCG (Seed, randomSeed)
+import Random.LCG (Seed, randomSeed)
 
 import Solitaire.Card (Card(..), allSuits, allRanks)
 
@@ -26,5 +26,5 @@ fromSeed :: Seed -> Deck
 fromSeed newSeed =
   Deck $ evalGen (shuffle unshuffled) { newSeed, size: 0 }
 
-randomDeck :: forall eff. Eff (random :: RANDOM | eff) Deck
+randomDeck :: Effect Deck
 randomDeck = map fromSeed randomSeed

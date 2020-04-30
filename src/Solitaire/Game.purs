@@ -3,7 +3,7 @@ module Solitaire.Game where
 import Solitaire.Prelude
 
 import Data.Array as Array
-import Test.QuickCheck.LCG (Seed)
+import Random.LCG (Seed)
 
 import Solitaire.Card (Card)
 import Solitaire.Stack (Stack)
@@ -96,7 +96,7 @@ withStock :: forall a. (Stock -> Maybe (Tuple a Stock)) -> GameM a
 withStock f = do
   stock <- gets (_.stock <<< unwrap)
   Tuple x newStock <- lift $ f stock
-  modify (over Game (_ { stock = newStock }))
+  modify_ (over Game (_ { stock = newStock }))
   pure x
 
 withTableau :: forall a.
@@ -104,7 +104,7 @@ withTableau :: forall a.
 withTableau ix f = do
   tableaux <- gets (_.tableaux <<< unwrap)
   Tuple x newTableaux <- lift $ Tableaux.modify ix f tableaux
-  modify (over Game (_ { tableaux = newTableaux }))
+  modify_ (over Game (_ { tableaux = newTableaux }))
   pure x
 
 -- | Attempt to add a single card to the appropriate foundation pile.
@@ -112,7 +112,7 @@ addToFoundations :: Card -> GameM Unit
 addToFoundations card = do
   foundations <- gets (_.foundations <<< unwrap)
   newFoundations <- lift $ Foundations.addCard card foundations
-  modify (over Game (_ { foundations = newFoundations }))
+  modify_ (over Game (_ { foundations = newFoundations }))
   pure unit
 
 resetStock :: GameM Unit
