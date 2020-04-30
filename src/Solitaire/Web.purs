@@ -52,13 +52,13 @@ main :: Effect Unit
 main = HA.runHalogenAff do
   body <- HA.awaitBody
   deck <- liftEffect randomDeck
-  runUI (ui deck) unit body
+  runUI (uiComponent deck) unit body
 
-ui ::
+uiComponent ::
   forall query input output m .
   Deck ->
   H.Component HH.HTML query input output m
-ui deck =
+uiComponent deck =
   H.mkComponent
     { initialState: const (initialState deck)
     , eval: H.mkEval (H.defaultEval { handleAction = handleAction })
@@ -73,13 +73,13 @@ ui deck =
           modify_ (moveCursor dir)
       SelectStack -> do
         onlySelection \csr ->
-          modify_ (first (const (WaitingForAction (Game.StackCursor csr))))
+          modify_ \st -> st { ui = WaitingForAction (Game.StackCursor csr) }
       SelectWaste -> do
         onlySelection \_ ->
-          modify_ (first (const (WaitingForAction Game.WasteCursor)))
+          modify_ \st -> st { ui = WaitingForAction Game.WasteCursor }
       AdvanceStock -> do
         onlySelection \_ ->
-          modify_ (second advanceOrReset)
+          modify_ \st -> st { game = advanceOrReset st.game }
       MoveToTableau ix -> do
         onlyWaiting \csr ->
           applyMove (Game.MoveStack csr (Game.ToTableau ix))
@@ -92,7 +92,7 @@ ui deck =
     where
     -- Only do anything if we are in the `Selection` UI state.
     onlySelection act = do
-      uiState <- gets fst
+      uiState <- gets _.ui
       case uiState of
         Selection csr ->
           act csr
@@ -101,7 +101,7 @@ ui deck =
 
     -- Only do anything if we are in the `WaitingForAction` UI state.
     onlyWaiting act = do
-      uiState <- gets fst
+      uiState <- gets _.ui
       case uiState of
         WaitingForAction csr ->
           act csr
@@ -111,17 +111,18 @@ ui deck =
     -- Transition from state 2 back to state 1 without doing anything, i.e.
     -- after cancelling, or after having applied a move successfully.
     discardSelection = do
-      game <- gets snd
+      game <- gets _.game
       onlyWaiting \csr' ->
-        modify_ $ first $ const $ Selection $ adjustWith succOrLoop game $
+        modify_ \st -> st { ui = Selection $ adjustWith succOrLoop game $
           case csr' of
             Game.StackCursor csr ->
               csr
             Game.WasteCursor ->
               { ix: bottom, size: 1 }
+        }
 
     applyMove move = do
-      game <- gets snd
+      game <- gets _.game
       case Game.applyMove move game of
         Game.GameWon ->
           -- todo: win state
@@ -130,7 +131,7 @@ ui deck =
           -- todo: wiggle animation
           pure unit
         Game.MoveOk game' -> do
-          modify_ (second (const game'))
+          modify_ \st -> st { game = game' }
           discardSelection
 
   render :: State -> HTML m
@@ -144,7 +145,7 @@ ui deck =
         , HE.onKeyDown interpretKey
         ]
       cards =
-        map renderCard (displayGame (snd st))
+        map renderCard (displayGame st.game)
       selection =
         [ renderSelection st ]
       notFocusedReminder =
@@ -221,11 +222,11 @@ ui deck =
                  ]
 
     renderSelection :: State -> HTML m
-    renderSelection (Tuple uiState game) =
+    renderSelection { ui, game } =
       let
         selectionClasses =
           ["selection"] <>
-            case uiState of
+            case ui of
               WaitingForAction _ ->
                 ["selection-fixed"]
               _ ->
@@ -243,7 +244,7 @@ ui deck =
                 ]
                 []
       in
-        go $ case uiState of
+        go $ case ui of
           Selection stackCsr ->
             displayStackCursor game stackCsr
           WaitingForAction csr ->
@@ -307,8 +308,10 @@ derive instance genericDirection :: Generic Direction _
 instance showDirection :: Show Direction where
   show = genericShow
 
-type State
-  = Tuple UIState Game
+type State =
+  { ui :: UIState
+  , game :: Game
+  }
 
 data UIState
   = Selection Game.StackCursor
@@ -320,13 +323,13 @@ instance showUIState :: Show UIState where
   show = genericShow
 
 moveCursor :: Direction -> State -> State
-moveCursor dir st@(Tuple uiState game) =
-  case uiState of
+moveCursor dir st@{ ui, game } =
+  case ui of
     Selection csr ->
       let
         newCsr = adjust (moveCursorInDirection dir csr)
       in
-        first (const (Selection newCsr)) st
+        st { ui = Selection newCsr }
     _ ->
       st
 
@@ -390,6 +393,6 @@ advanceOrReset g =
 
 initialState :: Deck -> State
 initialState deck =
-  Tuple
-    (Selection { ix: Tableaux.ixFromInt 0, size: 1 })
-    (Game.fromDeck deck)
+  { ui: Selection { ix: Tableaux.ixFromInt 0, size: 1 }
+  , game: Game.fromDeck deck
+  }
